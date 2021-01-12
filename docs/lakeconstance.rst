@@ -10,23 +10,15 @@ In this tutorial, we run a sophisticated simulation. The details of the model-co
 First run
 ------------------------------------
 
-Begin downloading :download:`lakeconstance.inc<lakeconstance.inc>`-file, which specifyes all necessary nodes and links in Lake Constance in a single file.
-Thus, for first run, it sufficies to create a following simple file :code:`lc.model`.
+Begin downloading :download:`lc.model<lc.model>`-file, which specifyes all necessary nodes and links in Lake Constance in a single file.
 
-.. code::
-
-    include "lakeconstance.inc";
-    
+.. literalinclude:: lc.model
 
 We may now run the code, again, by writing :code:`results = atns('lc.model')`. Plotting the results, 
 
-
 .. code::
     
-    results.overview();
-
-we find that they are much more structure. However, the variables do not follow any 
-periodic patterns, since we do not have any periodic interference affecting the system. This will be addressed later.
+    results.plot();
 
 Simulation parameter with Matlab
 --------------------------------
@@ -41,6 +33,7 @@ These will override any parameters set in the simulation.
                                                                       'days_per_year', 90,
                                                                       'day_name', 'day',
                                                                       'year_name', 'year'));
+
 
 Next step
 ----------------

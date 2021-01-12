@@ -66,7 +66,7 @@ LinkDef ProducerExudation <Detritus as i, Producer as j, Detritus as k>
 
 NodeDef Fish index as i inherits Consumer
 {
-    parameter avgl;
+    parameter avgl_i;
     parameter lwa_i;
     parameter lwb_i;
     parameter age_i;
@@ -79,10 +79,14 @@ NodeDef Fish index as i inherits Consumer
     parameter R1_i = 0.5 * consumptiongains_i^2 / maintenancelosses_i;
     parameter R2_i = 0.5 * (2 * consumptiongains_i - maintenancelosses_i);
     parameter gonadgain_i = invest_i*Pmat_i*@SWITCH(consumptiongains_i-maintenancelosses_i, R1_i, R2_i);
+    parameter fishinglosses_i;
     .gonads_i = gonadgain_i;
-    .B_i = -gonadgain_i;
+    .B_i = -gonadgain_i - fishinglosses_i;
     #B_i = hatchery_i;
 };
+
+
+
 
 LinkDef Ageing <Fish as i, Fish as j, Detritus as k>
 {
@@ -99,6 +103,24 @@ LinkDef Breeding <Fish as i, Fish as j, Detritus as k>
 LinkDef ResetDetritus <Detritus as i, Detritus as j, Detritus as k>
 {
   #B_i = -B_i + 1e6; // TODO: Min
+};
+
+NodeDef LengthFisheries index as i 
+{
+   dynamic yield_i;
+   parameter mu_i;
+   parameter sigma_i;
+   #yield_i = -yield_i; // Reset yield at end of the year
+};
+
+
+LinkDef LengthFishing <Fish as i, LengthFisheries as j, LengthFisheries as k>
+{
+  parameter F = 1; // @INRANGE(@YEAR, 1,2);
+  parameter E_ij = @exp(-(avgl_i-mu_j)^2/(2*sigma_j^2))/90;
+  parameter intensity_ij = E_ij*B_i*F;
+  fishinglosses_i += intensity_ij;
+  .yield_j = intensity_ij;
 };
 
 deploy Detritus
@@ -160,16 +182,11 @@ deploy Consumer
 
 deploy Fish
 {
-  tag Whi0 = new { B = 200; mbr = 0.14327; fm = 0.1; fa = 0.4; avgl = 1.2; lwa = 0.005; lwb = 3.14; age = 0; hatchery = 200; invest = 0; catchable = 0; Pmat = 0; };
-  tag Whi1 = new { B = 3810.2751; mbr = 0.062257; fm = 0.1; fa = 0.4; avgl = 13.4; lwa = 0.005; lwb = 3.14; age = 1; hatchery = 0; invest = 0; catchable = 0; Pmat = 0; };
-  tag Whi2 = new { B = 25626.4056; mbr = 0.051894; fm = 0.1; fa = 0.4; avgl = 22.7; lwa = 0.005; lwb = 3.14; age = 2; hatchery = 0; invest = 0.1; catchable = 1; Pmat = 0.047426; };
-  tag Whi3 = new { B = 16230.7382; mbr = 0.047239; fm = 0.1; fa = 0.4; avgl = 29.8; lwa = 0.005; lwb = 3.14; age = 3; hatchery = 0; invest = 0.15; catchable = 1; Pmat = 0.5; };
-  tag Whi4 = new { B = 33860.8601; mbr = 0.044554; fm = 0.1; fa = 0.4; avgl = 35.3; lwa = 0.005; lwb = 3.14; age = 4; hatchery = 0; invest = 0.2; catchable = 1; Pmat = 0.95257; };
-  tag Whi5 = new { B = 33860.8601; mbr = 0.044554; fm = 0.1; fa = 0.4; avgl = 35.3; lwa = 0.005; lwb = 3.14; age = 5; hatchery = 0; invest = 0.25; catchable = 1; Pmat = 1; };
-  tag Whi6 = new { B = 33860.8601; mbr = 0.044554; fm = 0.1; fa = 0.4; avgl = 35.3; lwa = 0.005; lwb = 3.14; age = 6; hatchery = 0; invest = 0.25; catchable = 1; Pmat = 1; };
-  tag Whi7 = new { B = 33860.8601; mbr = 0.044554; fm = 0.1; fa = 0.4; avgl = 35.3; lwa = 0.005; lwb = 3.14; age = 7; hatchery = 0; invest = 0.25; catchable = 1; Pmat = 1; };
-  tag Whi8 = new { B = 33860.8601; mbr = 0.044554; fm = 0.1; fa = 0.4; avgl = 35.3; lwa = 0.005; lwb = 3.14; age = 8; hatchery = 0; invest = 0.25; catchable = 1; Pmat = 1; };
-  tag Whi9 = new { B = 33860.8601; mbr = 0.044554; fm = 0.1; fa = 0.4; avgl = 35.3; lwa = 0.005; lwb = 3.14; age = 9; hatchery = 0; invest = 0.25; catchable = 1; Pmat = 1; };
+  tag Whi0 = new { B = 200; mbr = 0.14327; fm = 0.1; fa = 0.4; avgl = 1.2; lwa = 0.005; lwb = 3.14; age = 0; hatchery = 200; invest = 0; catchable = 0; Pmat = 0;   };
+  tag Whi1 = new { B = 3810.2751; mbr = 0.062257; fm = 0.1; fa = 0.4; avgl = 13.4; lwa = 0.005; lwb = 3.14; age = 1; hatchery = 0; invest = 0; catchable = 0; Pmat = 0;   };
+  tag Whi2 = new { B = 25626.4056; mbr = 0.051894; fm = 0.1; fa = 0.4; avgl = 22.7; lwa = 0.005; lwb = 3.14; age = 2; hatchery = 0; invest = 0.1; catchable = 1; Pmat = 0.047426;   };
+  tag Whi3 = new { B = 16230.7382; mbr = 0.047239; fm = 0.1; fa = 0.4; avgl = 29.8; lwa = 0.005; lwb = 3.14; age = 3; hatchery = 0; invest = 0.15; catchable = 1; Pmat = 0.5;   };
+  tag Whi4 = new { B = 33860.8601; mbr = 0.044554; fm = 0.1; fa = 0.4; avgl = 35.3; lwa = 0.005; lwb = 3.14; age = 4; hatchery = 0; invest = 0.2; catchable = 1; Pmat = 0.95257;   };
   tag Per0 = new { B = 18.4021; mbr = 0.15887; fm = 0.1; fa = 0.4; avgl = 0.7; lwa = 0.0105; lwb = 3.11; age = 0; hatchery = 0; invest = 0; catchable = 0; Pmat = 0;   };
   tag Per1 = new { B = 357.149; mbr = 0.065964; fm = 0.1; fa = 0.4; avgl = 9.14; lwa = 0.0105; lwb = 3.11; age = 1; hatchery = 0; invest = 0; catchable = 0; Pmat = 0;   };
   tag Per2 = new { B = 9018.4259; mbr = 0.055555; fm = 0.1; fa = 0.4; avgl = 15.1; lwa = 0.0105; lwb = 3.11; age = 2; hatchery = 0; invest = 0.1; catchable = 1; Pmat = 0.047426;   };
@@ -312,15 +329,6 @@ deploy Feeding
   new <Whi4,Cru,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.33333;  }; 
   new <Whi4,Cyc,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.33333;  }; 
   new <Whi4,Lep,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.33333;  }; 
-  new <Whi5,Cru,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.33333;  }; 
-  new <Whi5,Cyc,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.33333;  }; 
-  new <Whi5,Lep,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.33333;  }; 
-  new <Whi6,Cru,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.33333;  }; 
-  new <Whi6,Cyc,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.33333;  }; 
-  new <Whi6,Lep,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.33333;  }; 
-  new <Whi7,Cru,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.33333;  }; 
-  new <Whi7,Cyc,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.33333;  }; 
-  new <Whi7,Lep,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.33333;  }; 
   new <Per0,Rot1,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.16667;  }; 
   new <Per0,Rot2,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.16667;  }; 
   new <Per0,Rot3,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.16667;  }; 
@@ -348,3 +356,27 @@ deploy Feeding
   new <Per4,Per1,POC> { B0 = 15000; q = 1.2; y = 4; d = 0.0003; e = 0.85; w = 0.25;  }; 
 };
 
+deploy LengthFisheries 
+{
+  tag SmallMeshNet = new { mu=20; sigma=3; };
+  tag LargeMeshNet = new { mu=30; sigma=4; };
+};
+
+deploy LengthFishing
+{
+   new <Per0, SmallMeshNet, SmallMeshNet> {};
+   new <Per1, SmallMeshNet, SmallMeshNet> {};
+   new <Per2, SmallMeshNet, SmallMeshNet> {};
+   new <Per3, SmallMeshNet, SmallMeshNet> {};
+   new <Per4, SmallMeshNet, SmallMeshNet> {};
+   new <Whi0, SmallMeshNet, SmallMeshNet> {};
+   new <Whi1, SmallMeshNet, SmallMeshNet> {};
+   new <Whi2, SmallMeshNet, SmallMeshNet> {};
+   new <Whi3, SmallMeshNet, SmallMeshNet> {};
+   new <Whi4, SmallMeshNet, SmallMeshNet> {};
+};
+
+global daylength = 1;
+global stepsperday = 3; 
+global daysperyear = 3;
+global years = 1;

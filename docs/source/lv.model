@@ -1,8 +1,0 @@
-dynamic B1 = 2;
-dynamic B2 = 0.3;
-parameter alpha = 2;
-parameter beta = 1;
-parameter gamma = 1;
-parameter feedingrate = gamma*B1*B2;
-.B1 = alpha*B1 - feedingrate;
-.B2 = -beta*B2 + feedingrate;
