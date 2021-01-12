@@ -1,0 +1,12 @@
+NodeDef Predator     
+{                     // Begin the spesification section of the node
+   dynamic B;         // Define an uninitialized dynamical variable
+   parameter alpha=1; // Define an initialized parameter
+   .B = -alpha*B;     // The differential equation for the node
+};                    // Nodedef needs to ends with semicolon
+
+deploy Predator
+{
+   B = 230;           // We need to initialize the dynamical variable
+   alpha = 0.171;     // We can also override the previous value on alpha parameter.
+};

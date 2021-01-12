@@ -1,0 +1,11 @@
+global daylength = 0.1;
+global stepsperday = 10;
+global daysperyear = 15;
+global years = 6;
+parameter alpha=1;
+parameter beta=1;
+parameter gamma=1;
+dynamic B1=2/3;
+dynamic B2=1/2;
+.B1=alpha*B1-gamma*B1*B2;
+.B2=-beta*B2+gamma*B1*B2;
