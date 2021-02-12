@@ -85,13 +85,15 @@ fprintf(fid, lines);
               avgl = guild.avgl;
               lw_a = guild.lw_a;
               lw_b = guild.lw_b;
+              bodymass = guild.bodymass;
               age = guild.age;
               hatchery = guild.hatchery;     
               invest = guild.invest;
               catchable = guild.catchable;
               Pmat = guild.Pmat;
               fish = struct('label', label, 'name', name, 'binit', binit, 'mbr', mbr, 'f_m', f_m, 'f_a', f_a, ...
-                             'avgl', avgl, 'lw_a', lw_a, 'lw_b', lw_b, 'age', age, 'hatchery', hatchery, 'invest', invest, 'catchable', catchable, 'Pmat', Pmat);
+                             'avgl', avgl, 'lw_a', lw_a, 'lw_b', lw_b, 'age', age, 'hatchery', hatchery, ...
+                             'invest', invest, 'catchable', catchable, 'Pmat', Pmat,'bodymass', bodymass);
               
               fishes{end+1} = fish;
               %consumers{end+1} = fish;
@@ -165,18 +167,21 @@ fprintf(fid, lines);
          push(['invest = ' num2str(fishes{i}.invest) '; ']);
          push(['catchable = ' num2str(fishes{i}.catchable) '; ']);
          push(['Pmat = ' num2str(fishes{i}.Pmat) '; ']);
+         push(['bodymass = ' num2str(fishes{i}.bodymass) '; ']);
          push('  };\n'); 
      end
      push('};\n');     
      end
      namewonumber = unique(namewonumber);
      maxage = zeros(numel(namewonumber),1);
+     minage = 100*ones(numel(namewonumber),1);
      if numel(fishes)>0
      for i=1:numel(fishes)
         age = str2num(fishes{i}.label(isstrprop(fishes{i}.label,'digit')));
         for j=1:numel(namewonumber)
             if strcmp(namewonumber{j}, fishes{i}.label(isstrprop(fishes{i}.label,'alpha')))
                 maxage(j) = max(age, maxage(j));
+                minage(j) = min(age, minage(j));
             end
         end
      end
@@ -212,18 +217,29 @@ fprintf(fid, lines);
          end
          end
      push('};');
-
      
-push('deploy Dissolvation');
-push('{');
-push('  tag diss = new <POC, DOC, DOC> { rate = 0.1; };');
-push('};');
+push('deploy Dissolvation\n');
+push('{\n');
+push('  tag diss = new <POC, DOC, DOC> { rate = 0.1; };\n');
+push('};\n\n');
 
-push('deploy Aging');
-push('{');
-push('  tag diss = new <POC, DOC, DOC> { rate = 0.1; };');
-push('};');
+push('deploy Aging\n');
+push('{\n');
+for j = 1:numel(namewonumber)
+    for age=minage(j):maxage(j)-1
+        push(sprintf(' new <%s%d, %s%d, POC> {};\n', namewonumber{j}, age, namewonumber{j}, age+1)); 
+    end
+end
+push('};\n');
      
+push('deploy Breeding\n');
+push('{\n');
+for j = 1:numel(namewonumber)
+    for age=minage(j)+1:maxage(j)
+        push(sprintf(' new <%s%d, %s%d, POC> {};\n', namewonumber{j}, minage(j), namewonumber{j}, age)); 
+    end
+end
+push('};\n');
      
      fclose(fid);
      return
