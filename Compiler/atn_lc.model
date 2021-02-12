@@ -56,6 +56,7 @@ deploy Consumer
  tag Lep = new { B = 0.00032139; mbr = 0.04; fm = 0.1; fa = 0.4;mbry=8; mbrf=mbr; mbri=mbr;   };
 };
 
+  
 deploy Fish
 {
   tag Whi0 = new { B = 200; mbr = 0.14327; bodymass = @exp(-10.5886-9.1040*@ln(mbr)); mbry=8; mbrf=0.062257; mbri=mbr; fm = 0.1; fa = 0.4; avgl = 1.2; lwa = 0.005; lwb = 3.14; age = 0; hatchery = 200; invest = 0; catchable = 0; Pmat = 0;   };

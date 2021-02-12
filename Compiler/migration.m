@@ -223,7 +223,7 @@ push('{\n');
 push('  tag diss = new <POC, DOC, DOC> { rate = 0.1; };\n');
 push('};\n\n');
 
-push('deploy Aging\n');
+push('deploy Ageing\n');
 push('{\n');
 for j = 1:numel(namewonumber)
     for age=minage(j):maxage(j)-1

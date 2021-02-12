@@ -100,4 +100,4 @@ deploy Producer
 global daylength = 1;
 global stepsperday = 5; 
 global daysperyear = 5;
-global years = 1;
+global years = 100;

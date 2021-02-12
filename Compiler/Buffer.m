@@ -91,7 +91,7 @@ classdef Buffer < handle
             end
             errorpointer = [ repelem(' ', max(0,position(2))) '^'];
             %error(sprintf('Error in line %d col %d:\n%s\n%s\n%s', obj.linenumber, max(1,errorpos), msg, line, errorpointer));
-            if strcmp(filename,'N/A')
+            if nargin < 4 || strcmp(filename,'N/A')
                 if position(1) > numel(obj.lines) || position(1) <= 0
                     line = 'end of file';
                 else
@@ -104,6 +104,7 @@ classdef Buffer < handle
                 end
                 line = buffer.lines{position(1)};
             end
+            fprintf('%s', msg);
             error(sprintf('Error in file %s line %d col %d:\n%s\n%s\n%s', filename, position(1), position(2), msg, line, errorpointer));
         end
         
