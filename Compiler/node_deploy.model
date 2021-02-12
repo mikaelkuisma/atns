@@ -1,0 +1,15 @@
+NodeDef Guild index as i
+{
+  parameter C = 1.1;
+  parameter s;
+  parameter igr_i;
+  dynamic B_i;
+  .B_i = C*s*igr_i*B_i;
+};
+
+deploy Guild
+{
+  s=0.001;
+  tag Alg1 = new { igr=2; B=1; };
+  tag Alg2 = new { igr=1; B=3; };
+};

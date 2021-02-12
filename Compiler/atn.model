@@ -1,0 +1,155 @@
+NodeDef Guild index as i
+{
+   dynamic B_i;
+   parameter consumptionlosses_i;
+};
+
+NodeDef Detritus index as i inherits Guild 
+{
+};
+
+NodeDef Producer index as i inherits Guild
+{
+  parameter intra = 2;
+  parameter inter = 1;
+  //parameter K = 540000*@exp(-@t()*0.1)+1000;
+  parameter badyears = @SWITCH(0.5-(@T()-75)^2, @SWITCH(0.5-(@T()-(75+150))^2, 0, 1), 1);
+  //parameter badyears = @SWITCH(0.5-(@T()-5)^2, @SWITCH(0.5-(@T()-7)^2, 0, 1), 1);
+  parameter K0 = 540000-badyears*500000;
+  dynamic K;
+  //.K = 0.10*K*@Wt()-(K-K0)*0.2;
+  .K = -(K-K0)*0.2;
+  parameter igr_i;
+  parameter s_i;
+  parameter total = sum_i B_i;
+  parameter Nprod = sum_i 1;
+  parameter A = 1 / (1 + 1/Nprod);
+  parameter g_i = 1 - A*(inter*total+B_i*(intra-inter))/K;
+  parameter grossgrowth_i = igr_i * g_i * B_i;
+  parameter netgrowth_i = (1-s_i)*grossgrowth_i;
+  parameter exudation_i = s_i*grossgrowth_i;
+  .B_i = netgrowth_i;
+};
+
+
+NodeDef Consumer index as i inherits Guild
+{
+  parameter lambda=1;
+  dynamic mbr_i;
+  dynamic g_i;
+  parameter mbri_i;
+  parameter mbrf_i;
+  parameter mbry_i;
+  parameter X = 0.1; //@SWITCH(150-@T(), 0.01, 0.0);
+  parameter mbrtarget_i = @t()*mbrf_i + (1-@t())*mbri_i;
+  parameter fa_i;
+  parameter fm_i;
+  parameter effectiveprey_i;
+  parameter consumptiongains_i;
+  parameter maintenancelosses_i = fm_i*mbr_i*B_i;
+  .B_i = -maintenancelosses_i;
+  //.mbr_i = X*g_i*mbr_i + 0.1*mbr_i*@Wt();
+  //.g_i = -g_i + (consumptiongains_i-maintenancelosses_i)/B_i/mbr_i/mbry/fa_i - lambda*(mbr_i-mbrtarget_i)/mbrtarget_i;
+  
+  .mbr_i = @SWITCH(150-@T(), X*mbr_i*(0.0*@Wt()+lambda*(consumptiongains_i-maintenancelosses_i)/B_i/mbr_i/mbry/fa_i - 0*(mbr_i-mbrtarget_i)/mbrtarget_i), (mbrf_i - mbri_i)/90);
+  //.mbr_i = ;
+};
+
+LinkDef Feeding <Consumer as i, Guild as j, Detritus as k>
+{
+   parameter e_ij;
+   parameter q_ij;
+   parameter B0_ij;
+   parameter d_ij;
+   parameter y_ij;
+   parameter w_ij;
+   effectiveprey_i += w_ij*(B_j^q_ij);
+   parameter F_ij = w_ij*(B_j^q_ij) / ( B0_ij^q_ij + effectiveprey_i + d_ij * (B0_ij^q_ij)*B_i);
+   //parameter F_ij = w_ij*(B_j) / ( B0_ij + effectiveprey_i + d_ij * (B0_ij)*B_i);
+   parameter feedingrate_ij = mbr_i * y_ij * F_ij * B_i;
+   consumptiongains_i += fa_i * feedingrate_ij;
+   consumptionlosses_j += feedingrate_ij / e_ij;
+   .B_i = fa_i * feedingrate_ij;
+   .B_j = -feedingrate_ij / e_ij;
+   .B_k = feedingrate_ij * (1 / e_ij)*(1-e_ij);
+};
+
+LinkDef Dissolvation <Detritus as i, Detritus as j, Detritus as k>
+{
+  parameter rate;
+  .B_i = -rate*B_i;
+  .B_j = rate*B_i;
+};
+
+LinkDef ProducerExudation <Detritus as i, Producer as j, Detritus as k>
+{
+  .B_i = exudation_j;
+};
+
+NodeDef Fish index as i inherits Consumer
+{
+    parameter avgl_i;
+    parameter lwa_i;
+    parameter lwb_i;
+    parameter age_i;
+    parameter hatchery_i;
+    parameter invest_i;
+    parameter catchable_i;
+    parameter Pmat_i;
+    parameter bodymass_i;
+    dynamic gonads_i;
+
+    parameter R1_i = 0.5 * consumptiongains_i^2 / maintenancelosses_i;
+    parameter R2_i = 0.5 * (2 * consumptiongains_i - maintenancelosses_i);
+    parameter gonadgain_i = invest_i*Pmat_i*@SWITCH(consumptiongains_i-maintenancelosses_i, R1_i, R2_i);
+    parameter fishinglosses_i;
+    .gonads_i = gonadgain_i; // - gonads_i*consumptionlosses_i / B_i;
+    .B_i = -gonadgain_i - fishinglosses_i;
+    #B_i = hatchery_i;
+};
+
+LinkDef Ageing <Fish as i, Fish as j, Detritus as k>
+{
+  #B_i = -B_i;
+  #B_j =  B_i;
+};
+
+LinkDef MBRAgeing <Fish as i, Fish as j, Detritus as k>
+{
+  parameter A_ij;
+  parameter B_ij;
+  parameter C_ij;
+  #mbr_i = -mbr_i*A_ij + C_ij;
+  //#mbr_j =  (mbr_i - mbri_i + mbri_j)*B_ij;
+  #mbr_j =  mbr_i*B_ij;
+  #g_i = -g_i;
+};
+
+
+LinkDef Breeding <Fish as i, Fish as j, Detritus as k>
+{
+  #B_i = gonads_j;
+  #gonads_j = -gonads_j;
+};
+
+LinkDef ResetDetritus <Detritus as i, Detritus as j, Detritus as k>
+{
+  #B_i = -B_i + 1e6; // TODO: Min
+};
+
+NodeDef LengthFisheries index as i 
+{
+   dynamic yield_i;
+   parameter mu_i;
+   parameter sigma_i;
+   #yield_i = -yield_i; // Reset yield at end of the year
+};
+
+LinkDef LengthFishing <Fish as i, LengthFisheries as j, LengthFisheries as k>
+{
+  parameter F = 1; // @INRANGE(@YEAR, 1,2);
+  parameter E_ij = @exp(-(avgl_i-mu_j)^2/(2*sigma_j^2))/90;
+  parameter intensity_ij = E_ij*B_i*F;
+  fishinglosses_i += intensity_ij;
+  .yield_j = intensity_ij;
+};

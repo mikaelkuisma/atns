@@ -1,0 +1,29 @@
+NodeDef Guild index as i
+{
+  parameter alpha_i;
+  dynamic B_i;
+  .B_i = alpha*B_i;
+};
+LinkDef Feed <Guild as i, Guild as j, Guild as k>
+{
+     parameter gamma_ij;
+     parameter rate_ij = gamma_ij*B_i*B_j;
+    .B_i = -rate_ij;
+    .B_j = rate_ij;
+};
+
+deploy Guild
+{
+   tag Prey1 = new { alpha=1; B=0.2; };
+   tag Prey2 = new { alpha=1; B=0.3; };
+   tag Predator = new { alpha=-1; B=0.9; };
+   tag TopLevelPredator = new { alpha=-0.03; B=2; };
+};
+
+deploy Feed 
+{
+   new <Prey2, Predator, Predator> { gamma=0.5; };
+   new <Prey1, Predator, Predator> { gamma=0.7; };
+   new <Predator, TopLevelPredator, Predator> { gamma=0.03;};
+};
+ 

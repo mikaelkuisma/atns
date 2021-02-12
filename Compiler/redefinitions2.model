@@ -1,0 +1,3 @@
+dynamic E = 2;
+dynamic F = A;
+dynamic E = B;

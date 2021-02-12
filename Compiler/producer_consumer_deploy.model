@@ -1,0 +1,63 @@
+NodeDef Producer index as i
+{
+  parameter intra = 2;
+  parameter inter = 1;
+  parameter K = 5400;
+  parameter igr_i;
+  parameter s_i;
+  parameter total = sum_i B_i;
+  parameter g_i = 1 - (inter*total+B_i*(intra-inter))/K;
+  dynamic B_i;
+    .B_i = (1-s_i) * igr_i * g_i * B_i;
+};
+
+NodeDef Consumer index as i
+{
+  parameter mbr_i;
+  parameter fa = 0.4;
+  parameter fm = 0.1;
+  dynamic B_i;
+  parameter effectiveprey_i;
+  .B_i = -fa*mbr_i*B_i;
+};
+
+LinkDef Feeding <Consumer as i, Producer as j, Producer as k>
+{
+   parameter e_ij;
+   parameter q_ij;
+   parameter B0_ij;
+   parameter d_ij;
+   //parameter effectiveprey_i = sum_j B_j^q_ij;
+   effectiveprey_i += B_j^q_ij;
+   parameter F_ij = (B_j^q_ij) / ( B0_ij^q_ij + effectiveprey_i);
+   parameter feedingrate_ij = mbr_i * F_ij * B_i;
+   .B_i = feedingrate_ij;
+   .B_j = -feedingrate_ij / e_ij;
+   //.B_k = -feedingrate_ij * (1 / e_ij+1);
+};
+
+deploy Producer
+{
+  tag Alg1 = new { B=2000; igr = 1; s=0.2; };
+  tag Alg2 = new { B=3000; igr = 1.2; s=0.2; };
+  //tag Alg3 = new { B=2000; igr = 1.3; s=0.2; };
+  //tag Alg4 = new { B=3000; igr = 1.4; s=0.2; };
+  //tag Alg5 = new { B=2000; igr = 1.5; s=0.2; };
+  //tag Alg6 = new { B=3000; igr = 1.6; s=0.2; };
+};
+
+deploy Consumer
+{
+  tag Con1 = new { B=1000; mbr=0.4; };
+  //tag Con2 = new { B=1000; mbr=0.2; };
+  //tag Con3 = new { B=1000; mbr=0.1; };
+  //tag Con4 = new { B=1000; mbr=0.05; };
+};
+
+deploy Feeding 
+ {
+  new <Con1, Alg1, Alg1> { e=0.5; q=1.2; B0=1000; d=1; };
+  new <Con1, Alg2, Alg1> { e=0.5; q=1.2; B0=1000; d=1; };
+ };
+
+global stepsperday=10;

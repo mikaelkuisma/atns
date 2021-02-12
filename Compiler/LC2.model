@@ -1,0 +1,384 @@
+NodeDef Guild index as i
+{
+   dynamic B_i;
+};
+
+NodeDef Detritus index as i inherits Guild 
+{
+};
+
+NodeDef Producer index as i inherits Guild
+{
+  parameter intra = 2;
+  parameter inter = 1;
+  parameter K = 540000;
+  parameter igr_i;
+  parameter s_i;
+  parameter total = sum_i B_i;
+  parameter Nprod = sum_i 1;
+  parameter A = 1 / (1 + 1/Nprod);
+  parameter g_i = 1 - A*(inter*total+B_i*(intra-inter))/K;
+  parameter grossgrowth_i = igr_i * g_i * B_i;
+  parameter netgrowth_i = (1-s_i)*grossgrowth_i;
+  parameter exudation_i = s_i*grossgrowth_i;
+  .B_i = netgrowth_i;
+};
+
+NodeDef Consumer index as i inherits Guild
+{
+  parameter mbr_i;
+  parameter fa_i;
+  parameter fm_i;
+  parameter effectiveprey_i;
+  parameter consumptiongains_i;
+  parameter maintenancelosses_i = fm_i*mbr_i*B_i;
+  .B_i = -maintenancelosses_i;
+};
+
+LinkDef Feeding <Consumer as i, Guild as j, Detritus as k>
+{
+   parameter e_ij;
+   parameter q_ij;
+   parameter B0_ij;
+   parameter d_ij;
+   parameter y_ij;
+   parameter w_ij;
+   effectiveprey_i += w_ij*(B_j^q_ij);
+   parameter F_ij = w_ij*(B_j^q_ij) / ( B0_ij^q_ij + effectiveprey_i + d_ij * (B0_ij^q_ij)*B_i);
+   parameter feedingrate_ij = mbr_i * y_ij * F_ij * B_i;
+   consumptiongains_i += fa_i * feedingrate_ij;
+   .B_i = fa_i * feedingrate_ij;
+   .B_j = -feedingrate_ij / e_ij;
+   .B_k = feedingrate_ij * (1 / e_ij)*(1-e_ij);
+};
+
+LinkDef Dissolvation <Detritus as i, Detritus as j, Detritus as k>
+{
+  parameter rate;
+  .B_i = -rate*B_i;
+  .B_j = rate*B_i;
+};
+
+LinkDef ProducerExudation <Detritus as i, Producer as j, Detritus as k>
+{
+  .B_i = exudation_j;
+};
+
+NodeDef Fish index as i inherits Consumer
+{
+    parameter avgl_i;
+    parameter lwa_i;
+    parameter lwb_i;
+    parameter age_i;
+    parameter hatchery_i;
+    parameter invest_i;
+    parameter catchable_i;
+    parameter Pmat_i;
+    dynamic gonads_i;
+
+    parameter R1_i = 0.5 * consumptiongains_i^2 / maintenancelosses_i;
+    parameter R2_i = 0.5 * (2 * consumptiongains_i - maintenancelosses_i);
+    parameter gonadgain_i = invest_i*Pmat_i*@SWITCH(consumptiongains_i-maintenancelosses_i, R1_i, R2_i);
+    parameter fishinglosses_i;
+    .gonads_i = gonadgain_i;
+    .B_i = -gonadgain_i - fishinglosses_i;
+    #B_i = hatchery_i;
+};
+
+
+
+
+LinkDef Ageing <Fish as i, Fish as j, Detritus as k>
+{
+  #B_i = -B_i;
+  #B_j =  B_i;
+};
+
+LinkDef Breeding <Fish as i, Fish as j, Detritus as k>
+{
+  #B_i = gonads_j;
+  #gonads_j = -gonads_j;
+};
+
+LinkDef ResetDetritus <Detritus as i, Detritus as j, Detritus as k>
+{
+  #B_i = -B_i + 1e6; // TODO: Min
+};
+
+NodeDef LengthFisheries index as i 
+{
+   dynamic yield_i;
+   parameter mu_i;
+   parameter sigma_i;
+   #yield_i = -yield_i; // Reset yield at end of the year
+};
+
+
+LinkDef LengthFishing <Fish as i, LengthFisheries as j, LengthFisheries as k>
+{
+  parameter F = 1; // @INRANGE(@YEAR, 1,2);
+  parameter E_ij = @exp(-(avgl_i-mu_j)^2/(2*sigma_j^2))/90;
+  parameter intensity_ij = E_ij*B_i*F;
+  fishinglosses_i += intensity_ij;
+  .yield_j = intensity_ij;
+};
+
+deploy Detritus
+{
+  tag POC = new { B = 138848.2137;  };
+  tag DOC = new { B = 1000000;  };
+};
+
+deploy Dissolvation
+{
+  tag diss = new <POC, DOC, DOC> { rate = 0.1; };
+};
+
+deploy Producer
+{
+  K = 540000;
+  intra = 2.0;
+  inter = 1.0;
+  tag Alg1 = new { B = 3090.6886; s = 0.2; igr = 1;  };
+  tag Alg2 = new { B = 81439.4317; s = 0.2; igr = 0.9;  };
+  tag Alg3 = new { B = 163119.0181; s = 0.2; igr = 1.09;  };
+  tag Alg4 = new { B = 125050.4856; s = 0.2; igr = 1;  };
+  tag Alg5 = new { B = 0.00018404; s = 0.2; igr = 1.2;  };
+  tag APP = new { B = 1.1331; s = 0.2; igr = 0.6;  };
+};
+
+deploy ProducerExudation {
+  tag e1 = new <POC, Alg1, POC> {};
+  tag e2 = new <POC, Alg2, POC> {};
+  tag e3 = new <POC, Alg3, POC> {};
+  tag e4 = new <POC, Alg4, POC> {};
+  tag e5 = new <POC, Alg5, POC> {};
+  tag e6 = new <POC, APP, POC> {};
+};
+
+deploy ResetDetritus
+{
+  tag xx = new <DOC,DOC,DOC> {};
+};
+
+
+deploy Consumer
+{
+ tag Bac = new { B = 3076.6102; mbr = 0.04; fm = 0.1; fa = 0.2;  };
+ tag HNF = new { B = 0.0049579; mbr = 0.43; fm = 0.1; fa = 0.4;  };
+ tag Cil1 = new { B = 224.3878; mbr = 0.14; fm = 0.1; fa = 0.4;  };
+ tag Cil2 = new { B = 272.391; mbr = 0.18; fm = 0.1; fa = 0.4;  };
+ tag Cil3 = new { B = 3999.2482; mbr = 0.15; fm = 0.1; fa = 0.4;  };
+ tag Cil4 = new { B = 35689.5668; mbr = 0.15; fm = 0.1; fa = 0.4;  };
+ tag Cil5 = new { B = 77594.1712; mbr = 0.1; fm = 0.1; fa = 0.4;  };
+ tag Rot1 = new { B = 52.7506; mbr = 0.13; fm = 0.1; fa = 0.4;  };
+ tag Rot2 = new { B = 442.817; mbr = 0.12; fm = 0.1; fa = 0.4;  };
+ tag Rot3 = new { B = 315.267; mbr = 0.11; fm = 0.1; fa = 0.4;  };
+ tag Asp = new { B = 192.8999; mbr = 0.12; fm = 0.1; fa = 0.4;  };
+ tag Cru = new { B = 190.9516; mbr = 0.07; fm = 0.1; fa = 0.4;  };
+ tag Cyc = new { B = 1048.2423; mbr = 0.07; fm = 0.1; fa = 0.4;  };
+ tag Lep = new { B = 0.00032139; mbr = 0.04; fm = 0.1; fa = 0.4;  };
+};
+
+deploy LengthFisheries 
+{
+  tag SmallMeshNet = new { mu=20; sigma=3; };
+  tag LargeMeshNet = new { mu=30; sigma=4; };
+};
+
+
+deploy Fish
+{
+  tag Whi0 = new { B = 200; mbr = 0.14327; fm = 0.1; fa = 0.4; avgl = 1.2; lwa = 0.005; lwb = 3.14; age = 0; hatchery = 200; invest = 0; catchable = 0; Pmat = 0;   };
+  tag Whi1 = new { B = 3810.2751; mbr = 0.062257; fm = 0.1; fa = 0.4; avgl = 13.4; lwa = 0.005; lwb = 3.14; age = 1; hatchery = 0; invest = 0; catchable = 0; Pmat = 0;   };
+  tag Whi2 = new { B = 25626.4056; mbr = 0.051894; fm = 0.1; fa = 0.4; avgl = 22.7; lwa = 0.005; lwb = 3.14; age = 2; hatchery = 0; invest = 0.1; catchable = 1; Pmat = 0.047426;   };
+  tag Whi3 = new { B = 16230.7382; mbr = 0.047239; fm = 0.1; fa = 0.4; avgl = 29.8; lwa = 0.005; lwb = 3.14; age = 3; hatchery = 0; invest = 0.15; catchable = 1; Pmat = 0.5;   };
+  tag Whi4 = new { B = 33860.8601; mbr = 0.044554; fm = 0.1; fa = 0.4; avgl = 35.3; lwa = 0.005; lwb = 3.14; age = 4; hatchery = 0; invest = 0.2; catchable = 1; Pmat = 0.95257;   };
+  tag Per0 = new { B = 18.4021; mbr = 0.15887; fm = 0.1; fa = 0.4; avgl = 0.7; lwa = 0.0105; lwb = 3.11; age = 0; hatchery = 0; invest = 0; catchable = 0; Pmat = 0;   };
+  tag Per1 = new { B = 357.149; mbr = 0.065964; fm = 0.1; fa = 0.4; avgl = 9.14; lwa = 0.0105; lwb = 3.11; age = 1; hatchery = 0; invest = 0; catchable = 0; Pmat = 0;   };
+  tag Per2 = new { B = 9018.4259; mbr = 0.055555; fm = 0.1; fa = 0.4; avgl = 15.1; lwa = 0.0105; lwb = 3.11; age = 2; hatchery = 0; invest = 0.1; catchable = 1; Pmat = 0.047426;   };
+  tag Per3 = new { B = 10957.1634; mbr = 0.051081; fm = 0.1; fa = 0.4; avgl = 19.3; lwa = 0.0105; lwb = 3.11; age = 3; hatchery = 0; invest = 0.15; catchable = 1; Pmat = 0.5;   };
+  tag Per4 = new { B = 29071.6557; mbr = 0.048692; fm = 0.1; fa = 0.4; avgl = 22.2; lwa = 0.0105; lwb = 3.11; age = 4; hatchery = 0; invest = 0.2; catchable = 1; Pmat = 0.95257;   };
+};
+
+
+disabled deploy LengthFishing
+{
+   tag lf1 = new <Per0, SmallMeshNet, SmallMeshNet> {};
+   tag lf2 = new <Per1, SmallMeshNet, SmallMeshNet> {};
+   tag lf3 = new <Per2, SmallMeshNet, SmallMeshNet> {};
+   tag lf4 = new <Per3, SmallMeshNet, SmallMeshNet> {};
+   tag lf5 = new <Per4, SmallMeshNet, SmallMeshNet> {};
+   tag lf6 = new <Whi0, SmallMeshNet, SmallMeshNet> {};
+   tag lf7 = new <Whi1, SmallMeshNet, SmallMeshNet> {};
+   tag lf8 = new <Whi2, SmallMeshNet, SmallMeshNet> {};
+   tag lf9 = new <Whi3, SmallMeshNet, SmallMeshNet> {};
+   tag lf10 = new <Whi4, SmallMeshNet, SmallMeshNet> {};
+};
+
+deploy Breeding
+{
+  tag b1 = new <Whi0, Whi1, POC> {};
+  tag b2 = new <Whi0, Whi2, POC> {};
+  tag b3 = new <Whi0, Whi3, POC> {};
+  tag b4 =new <Whi0, Whi4, POC> {};
+  tag b5 =new <Per0, Per1, POC> {};
+  tag b6 =new <Per0, Per2, POC> {};
+  tag b7 =new <Per0, Per3, POC> {};
+  tag b8 =new <Per0, Per4, POC> {};
+};
+
+deploy Ageing
+{
+  tag a1 = new <Whi0, Whi1, POC> {};
+  tag a2 = new <Whi1, Whi2, POC> {};
+  tag a3 = new <Whi2, Whi3, POC> {};
+  tag a4 = new <Whi3, Whi4, POC> {};
+  tag a5 = new <Per0, Per1, POC> {};
+  tag a6 = new <Per1, Per2, POC> {};
+  tag a7 = new <Per2, Per3, POC> {};
+  tag a8 = new <Per3, Per4, POC> {};
+};
+
+deploy Feeding
+{
+  tag f1 = new <Bac,DOC,POC> { B0 = 1500; q = 1.2; y = 10; d = 0.1; e = 1; w = 1;  }; 
+  tag f2 = new <HNF,APP,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.5;  }; 
+  tag f3 = new <HNF,Bac,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.5;  }; 
+  tag f4 = new <Cil1,APP,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.5;  }; 
+  tag f5 = new <Cil1,Bac,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.5;  }; 
+  tag f6 = new <Cil2,Alg1,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.2;  }; 
+  tag f7 = new <Cil2,Alg5,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.2;  }; 
+  tag f8 = new <Cil2,APP,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.2;  }; 
+  tag f9 = new <Cil2,Bac,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.2;  }; 
+  tag f10 = new <Cil2,HNF,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.2;  }; 
+  tag f11 = new <Cil3,Alg1,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.25;  }; 
+  tag f12 = new <Cil3,Alg2,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.25;  }; 
+  tag f13 = new <Cil3,Alg5,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.25;  }; 
+  tag f14 = new <Cil3,HNF,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.25;  }; 
+  tag f15 = new <Cil4,Alg1,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.33333;  }; 
+  tag f16 = new <Cil4,Alg5,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.33333;  }; 
+  tag f17 = new <Cil4,HNF,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.33333;  }; 
+  tag f18 = new <Cil5,Alg1,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.125;  }; 
+  tag f19 = new <Cil5,Alg2,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.125;  }; 
+  tag f21 = new <Cil5,Alg4,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.125;  }; 
+  tag f22 = new <Cil5,Alg5,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.125;  }; 
+  tag f23 = new <Cil5,HNF,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.125;  }; 
+  tag f24 = new <Cil5,Cil1,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.125;  }; 
+  tag f25 = new <Cil5,Cil2,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.125;  }; 
+  tag f26 = new <Cil5,Cil3,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.125;  }; 
+  tag f27 = new <Rot1,Alg1,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.2;  }; 
+  tag f28 = new <Rot1,Alg5,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.2;  }; 
+  tag f29 = new <Rot1,APP,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.2;  }; 
+  tag f30 = new <Rot1,Bac,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.2;  }; 
+  tag f31 = new <Rot1,HNF,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.2;  }; 
+  tag f32 = new <Rot2,Alg1,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.11111;  }; 
+  tag f33 = new <Rot2,Alg2,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.11111;  }; 
+  tag f34 = new <Rot2,Alg3,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.11111;  }; 
+  tag f35 = new <Rot2,Alg4,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.11111;  }; 
+  tag f36 = new <Rot2,Alg5,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.11111;  }; 
+  tag f37 = new <Rot2,APP,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.11111;  }; 
+  tag f38 = new <Rot2,Bac,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.11111;  }; 
+  tag f39 = new <Rot2,HNF,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.11111;  }; 
+  tag f40 = new <Rot2,Cil1,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.11111;  }; 
+  tag f41 = new <Rot3,Alg1,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.14286;  }; 
+  tag f42 = new <Rot3,Alg2,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.14286;  }; 
+  tag f43 = new <Rot3,Alg3,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.14286;  }; 
+  tag f44 = new <Rot3,Alg4,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.14286;  }; 
+  tag f45 = new <Rot3,Alg5,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.14286;  }; 
+  tag f46 = new <Rot3,HNF,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.14286;  }; 
+  tag f47 = new <Rot3,Cil1,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.14286;  }; 
+  tag f48 = new <Asp,Alg2,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.083333;  }; 
+  tag f49 = new <Asp,Alg3,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.083333;  }; 
+  tag f50 = new <Asp,Alg4,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.083333;  }; 
+  tag f51 = new <Asp,HNF,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.083333;  }; 
+  tag f52 = new <Asp,Cil1,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.083333;  }; 
+  tag f53 = new <Asp,Cil2,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.083333;  }; 
+  tag f54 = new <Asp,Cil3,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.083333;  }; 
+  tag f55 = new <Asp,Cil4,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.083333;  }; 
+  tag f56 = new <Asp,Cil5,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.083333;  }; 
+  tag f57 = new <Asp,Rot1,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.083333;  }; 
+  tag f58 = new <Asp,Rot2,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.083333;  }; 
+  tag f59 = new <Asp,Rot3,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.083333;  }; 
+  tag f60 = new <Cru,Alg1,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.0625;  }; 
+  tag f61 = new <Cru,Alg2,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.0625;  }; 
+  tag f62 = new <Cru,Alg3,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.0625;  }; 
+  tag f63 = new <Cru,Alg4,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.0625;  }; 
+  tag f64 = new <Cru,Alg5,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.0625;  }; 
+  tag f65 = new <Cru,APP,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.0625;  }; 
+  tag f66 = new <Cru,Bac,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.0625;  }; 
+  tag f67 = new <Cru,HNF,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.0625;  }; 
+  tag f68 = new <Cru,Cil1,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.0625;  }; 
+  tag f69 = new <Cru,Cil2,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.0625;  }; 
+  tag f70 = new <Cru,Cil3,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.0625;  }; 
+  tag f71 = new <Cru,Cil4,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.0625;  }; 
+  tag f72 = new <Cru,Cil5,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.0625;  }; 
+  tag f73 = new <Cru,Rot1,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.0625;  }; 
+  tag f74 = new <Cru,Rot2,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.0625;  }; 
+  tag f75 = new <Cru,Rot3,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.0625;  }; 
+  tag f76 = new <Cyc,Alg1,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.066667;  }; 
+  tag f77 = new <Cyc,Alg2,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.066667;  }; 
+  tag f78 = new <Cyc,Alg3,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.066667;  }; 
+  tag f79 = new <Cyc,Alg4,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.066667;  }; 
+  tag f80 = new <Cyc,Alg5,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.45; w = 0.066667;  }; 
+  tag f81 = new <Cyc,HNF,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.066667;  }; 
+  tag f82 = new <Cyc,Cil1,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.066667;  }; 
+  tag f83 = new <Cyc,Cil2,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.066667;  }; 
+  tag f84 = new <Cyc,Cil3,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.066667;  }; 
+  tag f85 = new <Cyc,Cil4,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.066667;  }; 
+  tag f86 = new <Cyc,Cil5,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.066667;  }; 
+  tag f87 = new <Cyc,Rot1,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.066667;  }; 
+  tag f88 = new <Cyc,Rot2,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.066667;  }; 
+  tag f89 = new <Cyc,Rot3,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.066667;  }; 
+  tag f90 = new <Cyc,Asp,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.066667;  }; 
+  tag f91 = new <Lep,Asp,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.5;  }; 
+  tag f92 = new <Lep,Cru,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.5;  }; 
+  tag f93 = new <Whi0,Rot1,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.16667;  }; 
+  tag f94 = new <Whi0,Rot2,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.16667;  }; 
+  tag f95 = new <Whi0,Rot3,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.16667;  }; 
+  tag f96 = new <Whi0,Asp,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.16667;  }; 
+  tag f97 = new <Whi0,Cru,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.16667;  }; 
+  tag f98 = new <Whi0,Cyc,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.16667;  }; 
+  tag f99 = new <Whi1,Cru,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.33333;  }; 
+  tag f101 = new <Whi1,Cyc,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.33333;  }; 
+  tag f102 = new <Whi1,Lep,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.33333;  }; 
+  tag f103 = new <Whi2,Cru,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.33333;  }; 
+  tag f104 = new <Whi2,Cyc,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.33333;  }; 
+  tag f105 = new <Whi2,Lep,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.33333;  }; 
+  tag f106 = new <Whi3,Cru,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.33333;  }; 
+  tag f107 = new <Whi3,Cyc,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.33333;  }; 
+  tag f108 = new <Whi3,Lep,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.33333;  }; 
+  tag f109 = new <Whi4,Cru,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.33333;  }; 
+  tag f110 = new <Whi4,Cyc,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.33333;  }; 
+  tag f111 = new <Whi4,Lep,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.33333;  }; 
+  tag f112 = new <Per0,Rot1,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.16667;  }; 
+  tag f113 = new <Per0,Rot2,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.16667;  }; 
+  tag f114 = new <Per0,Rot3,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.16667;  }; 
+  tag f115 = new <Per0,Asp,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.16667;  }; 
+  tag f116 = new <Per0,Cru,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.16667;  }; 
+  tag f117 = new <Per0,Cyc,POC> { B0 = 1500; q = 1.2; y = 8; d = 0.01; e = 0.85; w = 0.16667;  }; 
+  tag f118 = new <Per1,Cru,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.33333;  }; 
+  tag f119 = new <Per1,Cyc,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.33333;  }; 
+  tag f120 = new <Per1,Lep,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.33333;  }; 
+  tag f121 = new <Per2,Cru,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.2;  }; 
+  tag f122 = new <Per2,Cyc,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.2;  }; 
+  tag f123 = new <Per2,Lep,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.2;  }; 
+  tag f124 = new <Per2,Whi0,POC> { B0 = 15000; q = 1.2; y = 4; d = 0.0003; e = 0.85; w = 0.2;  }; 
+  tag f125 = new <Per2,Per0,POC> { B0 = 15000; q = 1.2; y = 4; d = 0.0003; e = 0.85; w = 0.2;  }; 
+  tag f126 = new <Per3,Cru,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.14286;  }; 
+  tag f127 = new <Per3,Cyc,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.14286;  }; 
+  tag f128 = new <Per3,Lep,POC> { B0 = 50000; q = 1.2; y = 4; d = 0.0001; e = 0.85; w = 0.14286;  }; 
+  tag f129 = new <Per3,Whi0,POC> { B0 = 15000; q = 1.2; y = 4; d = 0.0003; e = 0.85; w = 0.14286;  }; 
+  tag f130 = new <Per3,Whi1,POC> { B0 = 15000; q = 1.2; y = 4; d = 0.0003; e = 0.85; w = 0.14286;  }; 
+  tag f131 = new <Per3,Per0,POC> { B0 = 15000; q = 1.2; y = 4; d = 0.0003; e = 0.85; w = 0.14286;  }; 
+  tag f132 = new <Per3,Per1,POC> { B0 = 15000; q = 1.2; y = 4; d = 0.0003; e = 0.85; w = 0.14286;  }; 
+  tag f1 = new <Per4,Whi0,POC> { B0 = 15000; q = 1.2; y = 4; d = 0.0003; e = 0.85; w = 0.25;  }; 
+  tag f1 = new <Per4,Whi1,POC> { B0 = 15000; q = 1.2; y = 4; d = 0.0003; e = 0.85; w = 0.25;  }; 
+  tag f1 = new <Per4,Per0,POC> { B0 = 15000; q = 1.2; y = 4; d = 0.0003; e = 0.85; w = 0.25;  }; 
+  tag f1 = new <Per4,Per1,POC> { B0 = 15000; q = 1.2; y = 4; d = 0.0003; e = 0.85; w = 0.25;  }; 
+};
+
+global daylength = 1;
+global stepsperday = 1; 
+global daysperyear = 90;
+global years = 25;

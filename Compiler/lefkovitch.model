@@ -1,0 +1,12 @@
+dynamic Blarvae = 1;
+dynamic Bjuvenile = 0;
+dynamic Badult = 0;
+dynamic Bsenile = 0;
+parameter llarvae = 1.0 * Blarvae;
+parameter ljuvenile = 0.4 * Bjuvenile;
+parameter ladult = 0.2 * Badult;
+parameter lsenile = 0.2 * Bsenile;
+.Blarvae = -llarvae;
+.Bjuvenile = llarvae - ljuvenile;
+.Badult = ljuvenile - ladult;
+.Bsenile = ladult - lsenile;

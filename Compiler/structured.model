@@ -1,0 +1,30 @@
+parameter N = 6;
+parameter intra = 2;
+parameter inter = 1;
+parameter K = 1;
+parameter s = [0.2, 0.2, 0.2, 0.2, 0.2, 0.2];
+parameter igr = @lognormal(N, 1.0, 0.04);
+dynamic Bprod = @lognormal(N, 1/N, 0.1);
+parameter Bprodsum = @SUM(Bprod);
+parameter g = 1 - (inter*Bprodsum-Bprod*(inter-intra))/K;
+.Bprod = (1-s)*igr*g*Bprod;
+
+parameter tr1Bodymass = 10;
+parameter tr1MuMbr = 0.1*tr1Bodymass^(1/9);
+parameter tr1mbr = @lognormal(N, tr1MuMbr, tr1MuMbr/5);
+parameter fm = 0.1;
+dynamic Btr1 = @lognormal(N, 0.5, 0.2);
+
+//parameter generalistness = @rangenobnd(0,1, N);
+//parameter omega = [ @rand(N) < a*generalistness+b, 
+//                    @rand(N) < a*generalistness+b,
+//                    @rand(N) < a*generalistness+b,
+//                    @rand(N) < a*generalistness+b,
+//                    @rand(N) < a*generalistness+b,
+//                    @rand(N) < a*generalistness+b ];
+//omega = @rand(N,N)
+//
+//.Btr1 = - fm * tr1mbr*Btr1;
+
+
+

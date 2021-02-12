@@ -1,0 +1,9 @@
+parameter intra = 2;
+parameter inter = 1;
+parameter K = 540000;
+parameter s = [0.2, 0.2, 0.2, 0.2, 0.2, 0.2];
+parameter igr = [1.0, 1.2, 1.4, 0.6, 0.8, 1.33];
+dynamic Bprod = [ 1000, 20000, 300000, 20000, 50000, 60000 ];
+parameter Bprodsum = @SUM(Bprod);
+parameter g = 1 - (inter*Bprodsum-Bprod*(inter-intra))/K;
+.Bprod = (1-s)*igr*g*Bprod;

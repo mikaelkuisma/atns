@@ -1,0 +1,4 @@
+NodeDef A index as i
+{
+  dynamic B_p; // Undefined index error
+};

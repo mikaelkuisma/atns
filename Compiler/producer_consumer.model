@@ -1,0 +1,24 @@
+parameter intra = 2;
+parameter inter = 1;
+parameter K = 540000;
+parameter s = [0.2, 0.2, 0.2, 0.2, 0.2, 0.2];
+parameter igr = [1.0, 1.2, 1.4, 0.6, 0.8, 1.33];
+dynamic Bprod = [ 1000, 20000, 300000, 20000, 50000, 60000 ];
+parameter Bprodsum = @SUM(Bprod);
+parameter g = 1 - (inter*Bprodsum-Bprod*(inter-intra))/K;
+parameter x = [ 0.4, 0.2, 0.1, 0.05, 0.05, 0.05 ];
+parameter fm = 0.1;
+parameter B0 = 1000;
+.Bprod = (1-s)*igr*g*Bprod;
+
+dynamic Bcons = [ 1000, 2000, 3000, 5000, 5000, 5000];
+
+parameter Ball = @HORZ(Bprod, Bcons);
+parameter q = 1.2;
+parameter e = 0.4;
+.Bcons = -fm*x*Bcons;
+
+
+
+
+

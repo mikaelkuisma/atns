@@ -1,0 +1,3 @@
+parameter A = 2;
+parameter B = A;
+parameter A = B;

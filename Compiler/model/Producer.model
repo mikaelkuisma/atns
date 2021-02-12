@@ -1,0 +1,87 @@
+NodeDef Guild index as i
+{
+   dynamic B_i;     // Biomass
+};
+
+NodeDef Detritus index as i inherits Guild 
+{
+};
+
+NodeDef Producer index as i inherits Guild
+{
+  parameter intra = 2;         // Intraspesific competition constant
+  parameter inter = 1;         // Interspesific competition constant
+  parameter K = 5400;          // Basal carrying capacity
+  parameter igr_i;             // Intrinsic growth rate
+  parameter s_i;               // Efficiency
+  parameter total = sum_i B_i; // Total producer biomass
+
+  parameter g_i = 1 - (inter*total+B_i*(intra-inter))/K; // Growth factor
+  .B_i = (1-s_i) * igr_i * g_i * B_i; // Logistic model for producers
+};
+
+NodeDef Consumer index as i inherits Guild
+{
+  parameter mbr_i;
+  parameter fa_i = 0.4;
+  parameter fm_i = 0.1;
+  parameter effectiveprey_i;
+  parameter feeding_i;
+  .B_i = -fa_i*mbr_i*B_i;
+};
+
+LinkDef Feeding <Consumer as i, Guild as j, Detritus as k>
+{
+   parameter e_ij;
+   parameter q_ij;
+   parameter B0_ij;
+   parameter d_ij;
+   parameter y_ij;
+   effectiveprey_i += B_j^q_ij;
+   parameter F_ij = (B_j^q_ij) / ( B0_ij^q_ij + effectiveprey_i + d_ij * B0_ij^q_ij*B_i);
+   parameter feedingrate_ij = fa_i * mbr_i * y_ij * F_ij * B_i;
+   feeding_i += feedingrate_ij;
+   .B_i = feedingrate_ij;
+   .B_j = -feedingrate_ij / e_ij;
+   .B_k = feedingrate_ij * (1 / e_ij-1);
+};
+
+NodeDef Fish index as i inherits Consumer
+{
+    parameter avgl;
+    parameter lw_a;
+    parameter lw_b;
+    parameter age;
+    parameter hatchery;
+    parameter invest;
+    parameter catchable;
+    parameter Pmat;
+    dynamic gonads;
+    .gonads = feeding_i*invest*Pmat;
+    .B = -feeding_i*invest*Pmat;
+};
+
+LinkDef Breeding <Fish as i, Fish as j, Detritus as k>
+{
+    #B_j += gonads_j;
+    #gonads_j = -gonads_j;
+};
+
+LinkDef Ageing <Fish as i, Fish as j, Detritus as k> 
+{
+   #B_i = -B_i;
+   #B_j = B_i;
+};
+
+LinkDef LCProducer index as i inherits Producer
+{
+   override parameter K = 540000*(1.5+cos(2*pi*t/MAJOR_EPOCH));
+};
+
+LinkDef LCFish index as i inherits Fish
+{
+   paramter bodymass;
+   overide parameter lw_a = 
+};
+
+Deploy LCDish

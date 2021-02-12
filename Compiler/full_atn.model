@@ -1,0 +1,572 @@
+class Guild
+{
+     parameter label;
+     parameter name;
+     dynamic B;
+};
+
+class Detritus
+{ 
+   parameter dissolution = 0.1 "Dissolution rate of particulate organic carbon to dissolved organic carbon";
+   dynamic POC "Particulate organic carbon";
+   dynamic DOC "Dissolved organic carbon";
+   .POC = -dissolution*POC;
+   .DOC =  dissolution*DOC;
+};
+
+class Producer:Guild parent Producers
+{
+     parameter igr;
+     parameter s;
+     intermediate g = 1 - (inter*parent.Bsum-B*(inter-intra))/K;
+     .B = (1-s)*igr*g*B;
+};
+
+class Producers
+{
+    parameter intra = 2;
+    parameter inter = 1;
+    parameter K = 540000;
+
+    Producer producers;
+    intermediate Bsum = @SUM(producers.B);
+};
+
+class Consumer:Guild
+{
+    parameter f_m;
+    parameter f_a;
+    parameter mbr;
+};
+
+class Consumers
+{
+    Consumer consumers;
+};
+
+class Feeding
+{
+    parameter prey;
+    parameter predator;
+    parameter w;
+    parameter q;
+    parameter e;
+    parameter d;
+    parameter B0;
+    parameter y;
+};
+
+new Detritus {
+   POC = 138848.2137;
+   DOC = 1000000;
+};
+
+new Producers {
+   producers = [ new Producer { label="Alg1"; igr=1; B=3; s=0.2; } ];
+}
+
+new Consumers {
+consumers = [ 
+      new Consumer { 
+         label="Bac";
+         name="Heterotrophic bacteria";
+         mbr=0.04;
+         B = 3.0766102e3;
+         f_m = 0.1; f_a=0.2; };  ];
+         };
+
+
+
+class Producer
+{
+     dynamic B;
+     parameter igr;
+     parameter s;
+     intermediate g;
+};
+
+class Producers
+{
+    parameter intra = 2;
+    parameter inter = 1;
+    parameter K = 540000;
+
+    Producer producers;
+    intermediate Bsum = @SUM(producers.B);
+    producers#g = 1 - (inter*Bsum-producers#B*(inter-intra))/K;
+    .producers#B = (1-producers.s)*producers#igr*producers#g*producers#B;
+};
+class Consumers
+{
+   parameter mbr_i;
+}
+
+function eats(a, b) {
+   
+};
+
+
+
+
+
+ans =
+
+    'Single-cell algae'
+
+
+ans =
+
+    'Large, single-cell algae or colonies'
+
+
+ans =
+
+    'Filamentous blue and green algae'
+
+
+ans =
+
+    'Diatoms, algal colonies'
+
+
+ans =
+
+    'Small, coccal algae'
+
+
+ans =
+
+    'Autotrophic picoplankton'
+
+
+ans =
+
+    'Heterotrophic bacteria'
+
+
+ans =
+
+    'Heterotrophic nanoflagellates'
+
+
+ans =
+
+    'Small ciliates'
+
+
+ans =
+
+    'Small ciliates'
+
+
+ans =
+
+    'Medium-size ciliates'
+
+
+ans =
+
+    'Medium-size ciliates'
+
+
+ans =
+
+    'Larger ciliates'
+
+
+ans =
+
+    'Small rotifers'
+
+
+ans =
+
+    'Medium-size rotifers'
+
+
+ans =
+
+    'Large rotifers'
+
+
+ans =
+
+    'Large rotifers'
+
+
+ans =
+
+    'Mostly cladocerans (daphnids)'
+
+
+ans =
+
+    'Cyclopoid copepods'
+
+
+ans =
+
+    'Large, carnivorous cladocerans'
+
+
+ans =
+
+    'Whitefish larvae'
+
+
+ans =
+
+    'Whitefish juveniles'
+
+
+ans =
+
+    'Whitefish 2yr'
+
+
+ans =
+
+    'Whitefish 3yr'
+
+
+ans =
+
+    'Whitefish 4+yr'
+
+
+ans =
+
+    'Perch larvea'
+
+
+ans =
+
+    'Perch juveniles'
+
+
+ans =
+
+    'Perch 2yr'
+
+
+ans =
+
+    'Perch 3yr'
+
+
+ans =
+
+    'Perch 4+yr'
+
+
+
+
+ans =
+
+     3.090688600000000e+03
+
+
+ans =
+
+     8.143943170000000e+04
+
+
+ans =
+
+     1.631190181000000e+05
+
+
+ans =
+
+     1.250504856000000e+05
+
+
+ans =
+
+     1.840400000000000e-04
+
+
+ans =
+
+   1.133100000000000
+
+
+ans =
+
+     3.076610200000000e+03
+
+
+ans =
+
+   0.004957900000000
+
+
+ans =
+
+     2.243878000000000e+02
+
+
+ans =
+
+     2.723910000000000e+02
+
+
+ans =
+
+     3.999248200000000e+03
+
+
+ans =
+
+     3.568956680000000e+04
+
+
+ans =
+
+     7.759417120000000e+04
+
+
+ans =
+
+  52.750599999999999
+
+
+ans =
+
+     4.428170000000000e+02
+
+
+ans =
+
+     3.152670000000000e+02
+
+
+ans =
+
+     1.928999000000000e+02
+
+
+ans =
+
+     1.909516000000000e+02
+
+
+ans =
+
+     1.048242300000000e+03
+
+
+ans =
+
+     3.213900000000000e-04
+
+
+ans =
+
+   200
+
+
+ans =
+
+     3.810275100000000e+03
+
+
+ans =
+
+     2.562640560000000e+04
+
+
+ans =
+
+     1.623073820000000e+04
+
+
+ans =
+
+     3.386086010000000e+04
+
+
+ans =
+
+  18.402100000000001
+
+
+ans =
+
+     3.571490000000000e+02
+
+
+ans =
+
+     9.018425900000000e+03
+
+
+ans =
+
+     1.095716340000000e+04
+
+
+ans =
+
+     2.907165570000000e+04
+
+% Producer
+% This object contains producers
+class Producers (When parsing, parse bytecode for .load .init .update .gradient
+{
+   dynamic B_i;
+   parameter intra = 1;
+   parameter inter = 1;
+   parameter K = 540000;
+   parameter igr_i;
+   dynamic B_i;
+   parameter Btot = @SUM(B_i);
+   intermediate g = 1 - (inter*Btot-B*(inter-intra))/K;
+   intermediate gains_i = igr_i*g*B_i;
+   parameter exudation_i = s_i*gains;
+   .B_i = (1-s_i)*gains;
+};
+
+class Detritus
+{ 
+   Producers producers;
+   dynamic POC;
+   dynamic DOC;
+   parameter dissolution;
+   .POC =  dissolution*DOC;
+   .DOC = -dissolution*DOC + @SUM(producers.exudation_i);
+   #POC = -POC+@MIN(POC, 100000);
+};
+
+class Diet
+{
+   Guild prey_i;
+   parameter e_i;
+   parameter q_i;
+   parameter w_i;
+   parameter y_i;
+   parameter B0_i;
+   parameter d_i;
+   intermediate effective_prey = @SUM(w_i*prey_i.B^q_i);
+   intermediate gains = y_i * prey_i.B**q_i / (effective_prey
+   .prey_i = 
+};
+
+class Consumers
+{
+   parameter mbr_i;
+   Diet diet;
+};
+
+
+Producers producers { B_i=[1,2,3,4]; igr_i=[1,2,3,4]; };
+Detritus detritus { self.dissolution=0.1; self.producers=producers; };
+
+Producers producers  (Creating a producer.  
+    NEW_OBJECT
+    METHODCALL Producers::load (Expects object to be at top of the stack, does not pop it)
+    METHODCALL Producers::init
+    METHODCALL lambda_constructor_0x01
+    STORE_PARAMETER #1 'store object to producers variable';
+{ detritus = detritus;
+  B_i = { 1,2,3};
+  s_i = 0.2;
+  igr_i = 1;
+};
+
+
+
+expression_list '>' gains '>' expressionlist;
+lhslist '>' gains '>' expressionlist;
+
+gains.byte_code();
+rep();
+rep();
+rep();
+for each expression_list
+  push(product)
+  mul();
+  unary_minus()
+  gradient lhs
+  push(prod
+  
+
+Producer Alg1; 
+
+Route(Reference('gains'), ExpressionList(Pair(0.2,B_i), Pair(0.8,Detritus.B_i)))
+
+obj Exudation(Detritus)
+{
+  .B_i -> Detritus.
+};
+
+%Producers#.B_i ->s_i*Detritus.#.BDoc, (1-s_i)Producers#.B_i;
+intermediate gains, is directed from A to B and C with efficiencies Bf and Cf.
+
+obj Detritus
+{
+   parameter dissolution;
+   dynamic BPOC;
+   dynamic BDOC;
+   .BPOC = -dissolution*BDOC;
+   sideeffect expand Producers with Exudation;
+};
+
+new Producers { B_i = [ 1.0, 2.0, 3.0]; s_i=0.2; igr_i = [ 1.0, 2.0, 3.0 ] };
+   
+parameter x = [ 0.4, 0.2, 0.1, 0.05, 0.05, 0.05 ];
+parameter fm = 0.1;
+parameter B0 = 1000;
+.Bprod = (1-s)*igr*g*Bprod;
+
+   
+};
+% Metabolic rate model
+
+ * metabolic rate model
+ * intrinsic growth model
+ * functional response model
+ * detritus
+ * fish gonads
+ * reproduction
+ * aging
+ * detritus adjuster
+
+parameter intra = 2;
+parameter inter = 1;
+parameter K = 540000;
+parameter s = [0.2, 0.2, 0.2, 0.2, 0.2, 0.2];
+parameter igr = [1.0, 1.2, 1.4, 0.6, 0.8, 1.33];
+dynamic Bprod = [ 1000, 20000, 300000, 20000, 50000, 60000 ];
+intermediate Bprodsum = @SUM(Bprod);
+intermediate g = 1 - (inter*Bprodsum-Bprod*(inter-intra))/K;
+parameter x = [ 0.4, 0.2, 0.1, 0.05, 0.05, 0.05 ];
+parameter fm = 0.1;
+parameter B0 = 1000;
+.Bprod = (1-s)*igr*g*Bprod;
+
+dynamic Bcons = [ 1000, 2000, 3000, 5000, 5000, 5000];
+
+parameter Ball = @HORZ(Bprod, Bcons);
+parameter q = 1.2;
+parameter e = 0.4;
+parameter B0 = 1000;
+parameter omega = 
+[[ 0,0,0,0,0,0,0,0,0,0,0,0 ],
+ [ 0,0,0,0,0,0,0,0,0,0,0,0 ],
+ [ 0,0,0,0,0,0,0,0,0,0,0,0 ],
+ [ 0,0,0,0,0,0,0,0,0,0,0,0 ],
+ [ 0,0,0,0,0,0,0,0,0,0,0,0 ],
+ [ 0,0,0,0,0,0,0,0,0,0,0,0 ],
+ [ 0,0,0,0,0,0,0,0,0,0,0,0 ],
+ [ 0,0,0,0,0,0,0,0,0,0,0,0 ],
+ [ 0,0,0,0,0,0,0,0,0,0,0,0 ],
+ [ 0,0,0,0,0,0,0,0,0,0,0,0 ],
+ [ 0,0,0,0,0,0,0,0,0,0,0,0 ],
+ [ 0,0,0,0,0,0,0,0,0,0,0,0 ]];
+.Bcons = -fm*x*Bcons;
+
+
+
+
+

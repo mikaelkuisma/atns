@@ -1,0 +1,8 @@
+
+global daylength = 1;
+global stepsperday = 10; 
+global daysperyear = 90;
+global years = 300;
+
+#include "atn_lc.model";
+

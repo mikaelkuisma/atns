@@ -1,0 +1,49 @@
+class Detritus
+{
+   parameter dissolution = 0.1;
+   dynamic POC;
+   dynamic DOC;
+};
+
+class Guild
+{
+   dynamic B;
+   parameter detritus:Detritus;
+   parameter losses;
+   parameter gains;
+   parameter exudation;
+   .B = -losses+gains;
+};
+
+class Producer(Guild)
+{
+   parameter s;
+   parameter igr;
+};
+
+class Consumer(Guild)
+{
+   parameter mbr;
+   parameter fa;
+   parameter fm;
+};
+
+class Producers
+{
+    producers = 
+    parameter guilds;
+    parameter intra = 2;
+    parameter inter = 1;
+    parameter K = 540000;
+    parameter s = [0.2, 0.2, 0.2, 0.2, 0.2, 0.2];
+    guilds.losses
+
+parameter igr = [1.0, 1.2, 1.4, 0.6, 0.8, 1.33];
+dynamic Bprod = [ 1000, 20000, 300000, 20000, 50000, 60000 ];
+intermediate Bprodsum = @SUM(Bprod);
+intermediate g = 1 - (inter*Bprodsum-Bprod*(inter-intra))/K;
+.Bprod = (1-s)*igr*g*Bprod;
+};
+
+detritus = new Detritus {};
+ALG1 = new Producer{

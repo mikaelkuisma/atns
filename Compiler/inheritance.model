@@ -1,0 +1,55 @@
+NodeDef Guild index as i
+{
+   dynamic B_i;
+   .B_i = 100;
+};
+
+NodeDef Producer index as i inherits Guild
+{
+   .B_i = -B_i;
+};
+
+NodeDef Consumer index as i inherits Guild
+{
+  parameter mbr_i;
+  parameter effectiveprey_i;
+  .B_i = -mbr_i*B_i;
+};
+
+LinkDef Feeding <Consumer as i, Guild as j, Guild as k>
+{
+   parameter y_ij;
+   effectiveprey_i += B_j;
+   parameter F_ij = B_j / ( 1 + effectiveprey_i);
+   parameter feedingrate_ij = mbr_i * y_ij * F_ij * B_i;
+   .B_i = feedingrate_ij;
+   .B_j = -feedingrate_ij;
+};
+
+deploy Consumer
+{
+  tag Bac = new { 
+    B = 3076.6102;
+    mbr = 0.04;
+ };
+};
+
+deploy Producer
+{
+  tag Alg1 = new { 
+    B = 3090.6886;
+ };
+};
+
+
+deploy Feeding
+{
+  new <Bac, Alg1, Alg1> { 
+    y = 8;
+ };
+};
+
+global daylength = 1;
+global stepsperday = 10; 
+global daysperyear = 10;
+global years = 1;

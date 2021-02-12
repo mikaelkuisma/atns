@@ -1,0 +1,22 @@
+NodeDef Guild index as i
+{
+  dynamic B_i;
+};
+
+LinkDef Feed <Guild as i, Guild as j, Guild as k>
+{
+    .B_i = 1;
+    .B_j = 2;
+};
+
+deploy Guild
+{
+   tag Prey = new {  B=2; };
+   tag Predator = new { B=1; };
+};
+
+deploy Feed 
+{
+   new <Prey, Predator, Predator> { };
+};
+ 

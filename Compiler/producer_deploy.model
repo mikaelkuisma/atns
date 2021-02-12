@@ -1,0 +1,25 @@
+NodeDef Producer index as i
+{
+  parameter intra = 2;
+  parameter inter = 1;
+  parameter K = 540000;
+  parameter igr_i;
+  parameter s_i;
+  parameter total = sum_i B_i;
+  parameter g_i = 1 - (inter*total-B_i*(inter-intra))/K;
+  dynamic B_i;
+  .B_i = (1-s_i) * igr_i * g_i * B_i;
+};
+
+deploy Producer
+{
+  intra = 2;
+  inter = 1;
+  K = 5400000;
+  tag Alg1 = new { B=2000; igr = 1; s_i=0.2; };
+  tag Alg2 = new { B=3000; igr = 1; s_i=0.2; };
+  tag Alg3 = new { B=2000; igr = 1; s_i=0.2; };
+  tag Alg4 = new { B=3000; igr = 1; s_i=0.2; };
+  tag Alg5 = new { B=2000; igr = 1; s_i=0.2; };
+  tag Alg6 = new { B=3000; igr = 1; s_i=0.2; };
+};

@@ -1,0 +1,5 @@
+parameter alpha = @RAND();
+parameter beta = alpha;
+dynamic B= 1;
+.B = -beta*B;
+display "biomass" B;

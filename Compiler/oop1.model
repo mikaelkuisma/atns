@@ -1,0 +1,9 @@
+class Guild
+{
+   parameter alpha=1;
+   dynamic B=1;
+   .B = -alpha*B;
+};
+
+guild = new Guild { alpha=1; dynamic B=2; };
+@PRINT(guild);

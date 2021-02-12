@@ -1,0 +1,103 @@
+NodeDef Guild index as i
+{
+   dynamic B_i;
+};
+
+NodeDef Detritus index as i inherits Guild 
+{
+};
+
+NodeDef Producer index as i inherits Guild
+{
+  parameter intra = 2;
+  parameter inter = 1;
+  parameter K = 540000;
+  parameter igr_i;
+  parameter s_i;
+  parameter total = sum_i B_i;
+  parameter Nprod = sum_i 1;
+  parameter A = 1 / (1 + 1/Nprod);
+  parameter g_i = 1 - A*(inter*total+B_i*(intra-inter))/K;
+  parameter grossgrowth_i = igr_i * g_i * B_i;
+  parameter netgrowth_i = (1-s_i)*grossgrowth_i;
+  parameter exudation_i = s_i*grossgrowth_i;
+  .B_i = netgrowth_i;
+};
+
+NodeDef Consumer index as i inherits Guild
+{
+  parameter mbr_i;
+  parameter fa_i = 0.4;
+  parameter fm_i = 0.1;
+  parameter effectiveprey_i;
+  parameter feeding_i;
+  parameter maintenancelosses_i = fm_i*mbr_i*B_i;
+  .B_i = -maintenancelosses_i;
+};
+
+LinkDef Feeding <Consumer as i, Guild as j, Detritus as k>
+{
+   parameter e_ij;
+   parameter q_ij;
+   parameter B0_ij;
+   parameter d_ij;
+   parameter y_ij;
+   parameter w_ij;
+   effectiveprey_i += w_ij*B_j^q_ij;
+   parameter F_ij = w_ij*B_j^q_ij / ( B0_ij^q_ij + effectiveprey_i + d_ij * B0_ij^q_ij*B_i);
+   parameter feedingrate_ij = fa_i * mbr_i * y_ij * F_ij * B_i;
+   feeding_i += feedingrate_ij;
+   .B_i = feedingrate_ij;
+   .B_j = -feedingrate_ij / e_ij;
+   .B_k = feedingrate_ij * (1 / e_ij)*(1-e_ij);
+};
+
+LinkDef Dissolvation <Detritus as i, Detritus as j, Detritus as k>
+{
+  parameter rate;
+  .B_i = -rate*B_i;
+  .B_j = rate*B_i;
+};
+
+LinkDef ProducerExudation <Detritus as i, Producer as j, Detritus as k>
+{
+  .B_i = exudation_j;
+};
+
+NodeDef Fish index as i inherits Consumer
+{
+    parameter avgl;
+    parameter lwa_i;
+    parameter lwb_i;
+    parameter age_i;
+    parameter hatchery_i;
+    parameter invest_i;
+    parameter catchable_i;
+    parameter Pmat_i;
+    dynamic gonads_i;
+    .B_i = -fm_i*mbr_i*B_i; // Temporary thing to check for a bug
+
+
+
+    //.gonads_i = feeding_i*invest_i*Pmat_i;
+    //.B_i = -feeding_i*invest_i*Pmat_i;
+};
+
+
+deploy Producer
+{
+  K = 540000;
+  intra = 2.0;
+  inter = 1.0;
+  tag Alg1 = new { B = 3090.6886; s = 0.2; igr = 1;  };
+  tag Alg2 = new { B = 81439.4317; s = 0.2; igr = 0.9;  };
+  tag Alg3 = new { B = 163119.0181; s = 0.2; igr = 1.09;  };
+  tag Alg4 = new { B = 125050.4856; s = 0.2; igr = 1;  };
+  tag Alg5 = new { B = 0.00018404; s = 0.2; igr = 1.2;  };
+  tag APP = new { B = 1.1331; s = 0.2; igr = 0.6;  };
+};
+
+global daylength = 1;
+global stepsperday = 5; 
+global daysperyear = 5;
+global years = 1;
