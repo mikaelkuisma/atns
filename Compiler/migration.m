@@ -1,11 +1,11 @@
 function model = migration(filename, target, varargin)
 global fid
 mfilename
-[filepath,name,ext] = fileparts(mfilename('fullpath'))
+[filepath,name,ext] = fileparts(mfilename('fullpath'));
 
-mdef = fullfile(filepath,'LC.mdef')
-
-lines = fileread(mdef)
+%mdef = fullfile(filepath,'LC.mdef')
+%lines = fileread(mdef)
+lines = [ '#include "LC.mdef";' newline ];
 
 fid = fopen(target,'w');
 fprintf(fid, lines);
