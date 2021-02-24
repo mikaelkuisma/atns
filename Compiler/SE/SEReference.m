@@ -9,12 +9,12 @@ end
    methods
        function this = SEReference(symbol, token_ptr)
            if nargin > 1
-               obj.token_ptr = token_ptr;
+               this.token_ptr = token_ptr;
            end
            this.symbol = symbol;
            underscores = find(this.symbol == '_');
            if numel(underscores)>1
-               error('Two underscores detected.');
+               this.error_me('Two underscores detected.');
            end
            if numel(underscores)>0
               parts = split(this.symbol,'_');

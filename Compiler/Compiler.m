@@ -524,7 +524,17 @@ classdef Compiler < handle
                parser = [];
             end
             if isa(parser,'Parser')
-               obj.model = parser.parse_MODULE();
+                try
+                    obj.model = parser.parse_MODULE();
+                catch e
+                    if e.message(1) == '@'
+                        %rethrow(e);
+                        token_ptr = str2num(e.message(2:7));
+                        parser.tokenizer.error_at_token(token_ptr, e.message(9:end));
+                    else
+                       rethrow(e);
+                    end
+                end
             elseif startsWith(class(parser), 'SE')
                obj.model = parser;
             elseif isempty(parser)

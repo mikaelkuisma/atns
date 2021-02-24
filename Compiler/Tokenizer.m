@@ -125,8 +125,14 @@ classdef Tokenizer < handle
         end
         
         function expected_error(obj, msg)
-            msg
-            obj.buffer.error(obj.peek_position(), sprintf('%s Found %s instead.', msg, obj.peek_as_str()), obj.token_files{obj.token_ptr+1});
+            obj.token_files
+            obj.token_ptr
+            if obj.token_ptr <= numel(obj.token_files)
+                filename = obj.token_files{obj.token_ptr};
+            else
+                filename = 'N/A';
+            end
+            obj.buffer.error(obj.peek_position(), sprintf('%s Found %s instead.', msg, obj.peek_as_str()), filename);
         end
         
         function error(obj, msg, token_ptr)

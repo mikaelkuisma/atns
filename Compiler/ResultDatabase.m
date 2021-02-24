@@ -89,6 +89,23 @@ end
             end
         end
         
+       function structured_plot_age_groups(obj)
+            plotdata = obj.get_struct_age_groups();
+            for plotid = 1:numel(plotdata)
+                figure(plotid);
+                hold on
+                names = {};
+                traces = plotdata{plotid}.data;
+                for trace = 1:numel(traces)
+                    trace = traces{trace};
+                    plot(trace.x, trace.y,'color', rand(3,1));
+                    names{end+1} = trace.name;
+                end
+                legend(names);
+                title(plotdata{plotid}.layout.title);
+            end
+        end        
+        
         function plotdata = get_struct(obj)
             plotdata = {};
             
@@ -121,11 +138,58 @@ end
                 end
             end
         end
+
+        function plotdata = get_struct_age_groups(obj)
+            plotdata = {};
+            
+            [x,y] = obj.get_daily_data();
+
+            % For each node
+            distinct_classes = unique(obj.classes);
+            for i=1:numel(distinct_classes)
+                idx = find(strcmp(obj.classes, distinct_classes{i}));
+                
+                names_local = obj.names(idx);
+                %tags_local = obj.tags(idx);
+                
+                distinct_names = unique(obj.names(idx));
+                
+                for k=1:numel(distinct_names)
+                    idx2 = find(strcmp(names_local, distinct_names{k}));
+                    %tags_local2 = tags_local(idx2);
+                    ids = idx(idx2);
+                    
+                    unique_tags = {};
+                    for id = ids
+                       fullname = obj.tags{id};
+                       unique_tags{end+1} = fullname(isstrprop(fullname,'alpha'));
+                    end
+                    unique_tags = unique(unique_tags);
+                    for utag = 1:numel(unique_tags)
+                        traces = {};
+                        for id = ids
+                           fullname = obj.tags{id};
+                           if strcmp(unique_tags{utag}, fullname(isstrprop(fullname,'alpha')))
+                               trace.x = x;
+                               trace.y = y(id,:);
+                               trace.name = obj.tags{id};
+                               traces{end+1} = trace;
+                           end
+                        end
+                        subplotdata.data = traces;
+                        subplotdata.layout = struct('title',distinct_names{k});
+                        plotdata{end+1} = subplotdata;
+                    end
+                end
+            end
+        end
+        
         
         function html = asjson(obj)
             data = obj.get_struct();
             html = jsonencode(data);
         end
+        
         
         function [x,data] = get_daily_data(obj)
             x = 0:(size(obj.Bminor,2)-1);

@@ -42,13 +42,13 @@ NodeDef Producer index as i inherits Guild
 NodeDef Consumer index as i inherits Guild
 {
   parameter lambda=1;
-  dynamic mbr_i;
+  parameter mbr_i;
   dynamic g_i;
   parameter mbri_i;
   parameter mbrf_i;
   parameter mbry_i;
-  parameter X = 0.1; //@SWITCH(150-@T(), 0.01, 0.0);
-  parameter mbrtarget_i = @t()*mbrf_i + (1-@t())*mbri_i;
+  //parameter X = 0.1; //@SWITCH(150-@T(), 0.01, 0.0);
+  //parameter mbrtarget_i = @t()*mbrf_i + (1-@t())*mbri_i;
   parameter fa_i;
   parameter fm_i;
   parameter effectiveprey_i;
@@ -110,6 +110,8 @@ NodeDef Fish index as i inherits Consumer
     parameter catchable_i;
     parameter Pmat_i;
     parameter bodymass_i;
+    parameter Gmax_i;
+    parameter inverseeffort_i = (fm_i*2*mbr_i*A-mbr_i*fm_i) ./ (Gmax + fm_i*mbr_i);
     dynamic gonads_i;
     parameter R1_i = 0.5 * consumptiongains_i^2 / maintenancelosses_i;
     parameter R2_i = 0.5 * (2 * consumptiongains_i - maintenancelosses_i);

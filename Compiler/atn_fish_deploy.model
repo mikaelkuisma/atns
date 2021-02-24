@@ -1,9 +1,9 @@
-#include "atn.model";
+#include "atn_fish.model";
 
 deploy Detritus
 {
   tag POC = new { B = 138848.2137;  };
-  tag DOC = new { B = 1000000;  };
+  tag DOC = new { B = 1000000;      };
 };
 
 deploy Dissolvation
@@ -55,20 +55,19 @@ deploy Consumer
  tag Cyc = new { B = 1048.2423; mbr = 0.07; fm = 0.1; fa = 0.4;mbry=8; mbrf=mbr; mbri=mbr;   };
  tag Lep = new { B = 0.00032139; mbr = 0.04; fm = 0.1; fa = 0.4;mbry=8; mbrf=mbr; mbri=mbr;   };
 };
-
   
 deploy Fish
 {
-  tag Whi0 = new { B = 200; mbr = 0.14327; bodymass = @exp(-10.5886-9.1040*@ln(mbr)); mbry=8; mbrf=0.062257; mbri=mbr; fm = 0.1; fa = 0.4; avgl = 1.2; lwa = 0.005; lwb = 3.14; age = 0; hatchery = 200; invest = 0; catchable = 0; Pmat = 0;   };
-  tag Whi1 = new { B = 3810.2751; mbr = 0.062257; bodymass = @exp(-10.5886-9.1040*@ln(mbr));mbry=4; mbrf=0.051894; mbri=mbr; fm = 0.1; fa = 0.4; avgl = 13.4; lwa = 0.005; lwb = 3.14; age = 1; hatchery = 0; invest = 0; catchable = 0; Pmat = 0;   };
-  tag Whi2 = new { B = 25626.4056; mbr = 0.051894; bodymass = @exp(-10.5886-9.1040*@ln(mbr));mbry=4; mbrf=0.047239; mbri=mbr; fm = 0.1; fa = 0.4; avgl = 22.7; lwa = 0.005; lwb = 3.14; age = 2; hatchery = 0; invest = 0.1; catchable = 1; Pmat = 0.047426;   };
-  tag Whi3 = new { B = 16230.7382; mbr = 0.047239; bodymass = @exp(-10.5886-9.1040*@ln(mbr));mbry=4; mbrf=0.044554; mbri=mbr;fm = 0.1; fa = 0.4; avgl = 29.8; lwa = 0.005; lwb = 3.14; age = 3; hatchery = 0; invest = 0.15; catchable = 1; Pmat = 0.5;   };
-  tag Whi4 = new { B = 33860.8601; mbr = 0.044554; bodymass = @exp(-10.5886-9.1040*@ln(mbr));mbry=4; mbrf=mbr; mbri=mbr; fm = 0.1; fa = 0.4; avgl = 35.3; lwa = 0.005; lwb = 3.14; age = 4; hatchery = 0; invest = 0.2; catchable = 1; Pmat = 0.95257;   };
-  tag Per0 = new { B = 18.4021; mbr = 0.15887; bodymass = @exp(-10.5886-9.1040*@ln(mbr));mbry=8; mbrf=0.065964; mbri=mbr; fm = 0.1; fa = 0.4; avgl = 0.7; lwa = 0.0105; lwb = 3.11; age = 0; hatchery = 0; invest = 0; catchable = 0; Pmat = 0;   };
-  tag Per1 = new { B = 357.149; mbr = 0.065964; bodymass = @exp(-10.5886-9.1040*@ln(mbr));mbry=4; mbrf=0.055555; mbri=mbr; fm = 0.1; fa = 0.4; avgl = 9.14; lwa = 0.0105; lwb = 3.11; age = 1; hatchery = 0; invest = 0; catchable = 0; Pmat = 0;   };
-  tag Per2 = new { B = 9018.4259; mbr = 0.055555; bodymass = @exp(-10.5886-9.1040*@ln(mbr));mbry=4; mbrf=0.051081; mbri=mbr; fm = 0.1; fa = 0.4; avgl = 15.1; lwa = 0.0105; lwb = 3.11; age = 2; hatchery = 0; invest = 0.1; catchable = 1; Pmat = 0.047426;   };
-  tag Per3 = new { B = 10957.1634; mbr = 0.051081; bodymass = @exp(-10.5886-9.1040*@ln(mbr));mbry=4; mbrf=0.048692; mbri=mbr; fm = 0.1; fa = 0.4; avgl = 19.3; lwa = 0.0105; lwb = 3.11; age = 3; hatchery = 0; invest = 0.15; catchable = 1; Pmat = 0.5;   };
-  tag Per4 = new { B = 29071.6557; mbr = 0.048692; bodymass = @exp(-10.5886-9.1040*@ln(mbr));mbry=4; mbrf=mbr; mbri=mbr; fm = 0.1; fa = 0.4; avgl = 22.2; lwa = 0.0105; lwb = 3.11; age = 4; hatchery = 0; invest = 0.2; catchable = 1; Pmat = 0.95257;   };
+  //tag Whi0 = new { B = 200; mbr = 0.14327; bodymass = @exp(-10.5886-9.1040*@ln(mbr)); mbry=8; mbrf=0.062257; mbri=mbr; fm = 0.1; fa = 0.4; avgl = 1.2; lwa = 0.005; lwb = 3.14; age = 0; hatchery = 200; invest = 0; catchable = 0; Pmat = 0;   };
+  //tag Whi1 = new { B = 3810.2751; mbr = 0.062257; bodymass = @exp(-10.5886-9.1040*@ln(mbr));mbry=4; mbrf=0.051894; mbri=mbr; fm = 0.1; fa = 0.4; avgl = 13.4; lwa = 0.005; lwb = 3.14; age = 1; hatchery = 0; invest = 0; catchable = 0; Pmat = 0;   };
+  //tag Whi2 = new { B = 25626.4056; mbr = 0.051894; bodymass = @exp(-10.5886-9.1040*@ln(mbr));mbry=4; mbrf=0.047239; mbri=mbr; fm = 0.1; fa = 0.4; avgl = 22.7; lwa = 0.005; lwb = 3.14; age = 2; hatchery = 0; invest = 0.1; catchable = 1; Pmat = 0.047426;   };
+  //tag Whi3 = new { B = 16230.7382; mbr = 0.047239; bodymass = @exp(-10.5886-9.1040*@ln(mbr));mbry=4; mbrf=0.044554; mbri=mbr;fm = 0.1; fa = 0.4; avgl = 29.8; lwa = 0.005; lwb = 3.14; age = 3; hatchery = 0; invest = 0.15; catchable = 1; Pmat = 0.5;   };
+  //tag Whi4 = new { B = 33860.8601; mbr = 0.044554; bodymass = @exp(-10.5886-9.1040*@ln(mbr));mbry=4; mbrf=mbr; mbri=mbr; fm = 0.1; fa = 0.4; avgl = 35.3; lwa = 0.005; lwb = 3.14; age = 4; hatchery = 0; invest = 0.2; catchable = 1; Pmat = 0.95257;   };
+  tag Per0 = new { Gmax=2.9605e+03; B = 18.4021; mbr = 0.15887; bodymass = @exp(-10.5886-9.1040*@ln(mbr));mbry=8; mbrf=0.065964; mbri=mbr; fm = 0.1; fa = 0.4; avgl = 0.7; lwa = 0.0105; lwb = 3.11; age = 0; hatchery = 0; invest = 0; catchable = 0; Pmat = 0;   };
+  tag Per1 = new { Gmax=4.7556; B = 357.149; mbr = 0.065964; bodymass = @exp(-10.5886-9.1040*@ln(mbr));mbry=4; mbrf=0.055555; mbri=mbr; fm = 0.1; fa = 0.4; avgl = 9.14; lwa = 0.0105; lwb = 3.11; age = 1; hatchery = 0; invest = 0; catchable = 0; Pmat = 0;   };
+  tag Per2 = new { Gmax=2.1340; B = 9018.4259; mbr = 0.055555; bodymass = @exp(-10.5886-9.1040*@ln(mbr));mbry=4; mbrf=0.051081; mbri=mbr; fm = 0.1; fa = 0.4; avgl = 15.1; lwa = 0.0105; lwb = 3.11; age = 2; hatchery = 0; invest = 0.1; catchable = 1; Pmat = 0.047426;   };
+  tag Per3 = new { Gmax=1.5620; B = 10957.1634; mbr = 0.051081; bodymass = @exp(-10.5886-9.1040*@ln(mbr));mbry=4; mbrf=0.048692; mbri=mbr; fm = 0.1; fa = 0.4; avgl = 19.3; lwa = 0.0105; lwb = 3.11; age = 3; hatchery = 0; invest = 0.15; catchable = 1; Pmat = 0.5;   };
+  tag Per4 = new { Gmax=1.3333; B = 29071.6557; mbr = 0.048692; bodymass = @exp(-10.5886-9.1040*@ln(mbr));mbry=4; mbrf=mbr; mbri=mbr; fm = 0.1; fa = 0.4; avgl = 22.2; lwa = 0.0105; lwb = 3.11; age = 4; hatchery = 0; invest = 0.2; catchable = 1; Pmat = 0.95257;   };
 };
 
 deploy LengthFisheries 

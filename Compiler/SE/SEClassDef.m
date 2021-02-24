@@ -194,11 +194,10 @@ classdef SEClassDef < SEExpression & Context
         function id = get_dynamic_id_by_name(obj, symbol)
              info = obj.symboltable.get_info(symbol);
              if isempty(info)
-                 xxx
-                 error(['Cannot locate symbol' symbol]);
+                 obj.error_me(sprintf('Cannot locate symbol %s.', symbol));
              end
              if ~strcmp(info{1},'B')
-                 error(sprintf('Expected dynamic variable for symbol %s.',symbol));
+                 obj.error_me(sprintf('Expected dynamic variable for symbol %s.',symbol));
              end
              id = info{2};
         end
