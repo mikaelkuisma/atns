@@ -284,12 +284,12 @@ classdef SEAssign < SEExpression & Context
                     compiler.INDEX_JUMP_OPCODE(loop_ptr);
                  end
              elseif obj.lhs.parameter_type == 2
-                error('Link gradients not supported.');
-                %compiler.LINK_LOOP_OPCODE();
-                %loop_ptr = compiler.push_PTR_TO_BE_BACKFILLED();
-                %obj.rhs.byte_compile(compiler);
-                %obj.lhs.byte_compile_assign_to(compiler);
-                %compiler.LINK_JUMP_OPCODE(loop_ptr);        
+                %error('Link gradients not supported.');
+                compiler.LINK_LOOP_OPCODE();
+                loop_ptr = compiler.push_PTR_TO_BE_BACKFILLED();
+                obj.rhs.byte_compile(compiler);
+                obj.lhs.byte_compile_assign_to(compiler, obj.params);
+                compiler.LINK_JUMP_OPCODE(loop_ptr);        
              else
                  error('internal error.');
              end

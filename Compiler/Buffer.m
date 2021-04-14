@@ -80,6 +80,7 @@ classdef Buffer < handle
         end
         
         function error(obj, position, msg, filename)
+            asdas
             %line = obj.get_current_line();
             %obj.linenumber
             %errorpos = obj.ptr-obj.linestart;

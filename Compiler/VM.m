@@ -1837,6 +1837,9 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                         error('TODO');
                         context.store_link_indexed_dynamic(data, obj.stack{end});
                         obj.stack = obj.stack(1:end-1);
+                    case Compiler.STORE_LINK_INDEXED_GRADIENT
+                        fprintf(fid, '%s = %s;\n', context.link_indexed_gradient_ref(data), tempstack{end});
+                        freevars{end+1} = tempstack{end}; tempstack = tempstack(1:end-1); 
                     case Compiler.NEW_LINK_INDEXED
                         error('TODO');
                         link = obj.code(obj.ptr:obj.ptr+5); obj.ptr = obj.ptr + 6; % 6 byte parameter string

@@ -54,12 +54,8 @@ end
                 this.dynamic_table_id = super_context.get_dynamic_id_by_name(this.symbol);
             elseif this.parameter_type == 1
                 this.dynamic_table_id = super_context.get_indexed_dynamic_id_by_name(this.symbol);
-                %this.dynamic_table_id
-                %super_context
-                %xxx TODO
             else
-                this.parameter_type
-                error('internal error');
+                this.dynamic_table_id = super_context.get_link_indexed_dynamic_id_by_name(this.symbol);
             end    
             catch e
                 rethrow(e);
@@ -86,10 +82,9 @@ end
             if this.parameter_type == 0
                 compiler.STORE_GRADIENT_OPCODE(this.dynamic_table_id);
             elseif this.parameter_type == 1
-                    compiler.STORE_INDEXED_GRADIENT_OPCODE(this.dynamic_table_id);
+                compiler.STORE_INDEXED_GRADIENT_OPCODE(this.dynamic_table_id);
             else
-                this.parameter_type
-                error('internal error');
+                compiler.STORE_LINK_INDEXED_GRADIENT_OPCODE(this.dynamic_table_id);
             end               
             
        end

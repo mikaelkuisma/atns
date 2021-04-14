@@ -13,7 +13,7 @@ classdef SELinkDef < SEClassDef
     end    
     methods
         function obj = SELinkDef(name, linkindexing, statements)
-            xxx
+            error('Internal error. SELinkDef is obsolete class');
             obj@SEClassDef(name, statements);
             obj.linkindexing = linkindexing;
             obj.link_parameters = containers.Map;

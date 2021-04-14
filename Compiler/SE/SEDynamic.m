@@ -48,8 +48,7 @@ end
             elseif this.parameter_type == 1
                 this.dynamic_table_id = super_context.get_indexed_dynamic_id_by_name(this.symbol);
             else
-                this.parameter_type
-                error('internal error');
+                this.dynamic_table_id = super_context.get_link_indexed_dynamic_id_by_name(this.symbol);
             end    
         end
        
@@ -63,8 +62,7 @@ end
             elseif obj.parameter_type == 1
                 super_context.add_indexed_dynamic(obj.symbol);
             else
-                obj.parameter_type
-                error('internal error');
+                super_context.add_link_indexed_dynamic(obj.symbol);
             end                       
            catch e
                obj.error_me(e.message);

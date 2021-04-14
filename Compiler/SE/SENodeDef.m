@@ -12,6 +12,7 @@ classdef SENodeDef < SEClassDef
         link_classes % Contexts for resolving link indices
         
         link_indexed_parameter_names
+        link_indexed_dynamic_names
         
         index_to_id
     end
@@ -23,6 +24,8 @@ classdef SENodeDef < SEClassDef
             obj.inherits = inherits;
             obj.indexing = indexing;
             obj.link_indexed_parameter_names = {};
+            obj.link_indexed_dynamic_names = {};
+            
             obj.index_to_id = containers.Map;
             if strcmp(class(obj.indexing),'SEReference')
                 obj.link_indexing = 0;
@@ -97,6 +100,13 @@ classdef SENodeDef < SEClassDef
             obj.link_indexed_parameter_names{end+1} = lhs;
             if ~obj.symboltable.has_symbol(lhs)
                 obj.symboltable.push(lhs, SEGeneralModel.LINK_INDEXED_PARAMETER_TABLE, 1); % By default, for now, size is always 1
+            end
+        end
+        
+        function add_link_indexed_dynamic(obj, lhs)
+            obj.link_indexed_dynamic_names{end+1} = lhs;
+            if ~obj.symboltable.has_symbol(lhs)
+                obj.symboltable.push(lhs, SEGeneralModel.LINK_INDEXED_DYNAMIC_TABLE, 1); % By default, for now, size is always 1
             end
         end
         
@@ -286,7 +296,15 @@ classdef SENodeDef < SEClassDef
              end
              id = info{2};
         end
-        
+
+        function id = get_link_indexed_dynamic_id_by_name(obj, symbol)
+             info = obj.get_info_by_name(symbol);
+             if ~strcmp(info{1},'B_ij')
+                 error('link index paramter expected');
+             end
+             id = info{2};
+        end
+
         function value = is_link(obj)
             value = obj.link_indexing;
         end

@@ -158,6 +158,7 @@ fid = fopen(target,'w');
      push('{\n');
      namewonumber = {};
      for i=1:numel(fishes)
+         fprintf('%s x_i = %.4f\n', fishes{i}.label, fishes{i}.mbr);
          namewonumber{end+1} = fishes{i}.label(isstrprop(fishes{i}.label,'alpha'));
          push(['  tag ' fishes{i}.label ' = new { ']);
          push(['B = ' num2str(fishes{i}.binit) '; ']);

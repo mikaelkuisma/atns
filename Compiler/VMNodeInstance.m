@@ -6,9 +6,9 @@ classdef VMNodeInstance < VMInstance
         index_parameter
         index_gradient
         
-        link_index_dynamic % TODO: NOT ALLOWED FOR NOW
+        link_index_dynamic
         link_index_parameter
-        link_index_gradient % TODO: NOT ALLOWED FOR NOW
+        link_index_gradient
         
         link_loop_index
         link_loop_keys
@@ -197,9 +197,11 @@ classdef VMNodeInstance < VMInstance
         function value = link_indexed_parameter_ref(obj, idx)
             value = sprintf('%s_link%d_%s', obj.classname, obj.link_loop_index, obj.vmclass.link_indexed_parameter_names{idx});
         end
-        
-        
-        
+
+        function value = link_indexed_gradient_ref(obj, idx)
+            value = sprintf('d%s_link%d_%sdt', obj.classname, obj.link_loop_index, obj.vmclass.link_indexed_dynamic_names{idx});
+        end
+
        function value = parameter_by_idx_ref(obj, vm, idx, position)
             link_data = typecast(obj.current_link_index,'uint8');
             link_data = link_data(idx*2-1:idx*2);
@@ -261,6 +263,12 @@ classdef VMNodeInstance < VMInstance
              data = obj.link_index_dynamic(obj.current_link_index);
              data{position} = value;
              obj.link_index_dynamic(obj.current_link_index) = data;
+        end
+
+        function store_link_indexed_gradient(obj, position, value)
+             data = obj.link_index_gradient(obj.current_link_index);
+             data{position} = value;
+             obj.link_index_gradient(obj.current_link_index) = data;
         end
         
         function store_link_indexed_parameter(obj, position, value)

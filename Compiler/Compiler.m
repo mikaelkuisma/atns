@@ -1,5 +1,10 @@
 classdef Compiler < handle
     properties (Constant)
+        
+        % New formulation of opcodes
+        
+        % ADD PREFIX
+        
         NO_OPERATION = 0x00;
         LOAD_CONSTANT_8 = 0x01; % int8 parameter
         ADD_OPERATOR = 0x02;
@@ -98,6 +103,9 @@ classdef Compiler < handle
         EXIT_LAMBDA = 0xF2;
         CALL_ENTRY = 0xF3;
         
+        STORE_LINK_INDEXED_GRADIENT = 0xF4; % int32 parameter
+        
+        
         END_DEPLOY = 0xFE;
         RET = 0xFF;
 
@@ -124,7 +132,7 @@ classdef Compiler < handle
                        4 4 4 4 4 4 4 4 4 4 4 4 4 0 4 0 ... % C0..CF
                        4 4 4 4 4 4 0 4 0 4 1 4 4 4 4 1 ... % D0..DF
                        4 2 4 4 2 0 2 1 4 4 0 2 4 4 4 4 ... % E0..EF
-                       2 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 ];  % F0..FF
+                       2 0 0 2 4 0 0 0 0 0 0 0 0 0 0 0 ];  % F0..FF
                    
     end
     
@@ -275,6 +283,10 @@ classdef Compiler < handle
                     case Compiler.STORE_INDEXED_DYNAMIC
                         name = 'STORE_INDEXED_DYNAMIC';
                     case Compiler.STORE_INDEXED_GRADIENT
+                        name = 'STORE_INDEXED_GRADIENT';
+                    case Compiler.STORE_LINK_INDEXED_DYNAMIC
+                        name = 'STORE_INDEXED_DYNAMIC';
+                    case Compiler.STORE_LINK_INDEXED_GRADIENT
                         name = 'STORE_INDEXED_GRADIENT';
                     case Compiler.END_DEPLOY
                         name = 'END_DEPLOY';
@@ -653,6 +665,7 @@ classdef Compiler < handle
            try
               obj.model.byte_compile(obj);
            catch e
+               rethrow(e)
                if e.message(1) == '@'
                    %rethrow(e);
                    token_ptr = str2num(e.message(2:7));
@@ -817,6 +830,14 @@ classdef Compiler < handle
         
         function STORE_LINK_INDEXED_PARAMETER_OPCODE(obj, index)
              obj.OPCODE(Compiler.STORE_LINK_INDEXED_PARAMETER, uint32(index));
+        end
+        
+        function STORE_LINK_INDEXED_DYNAMIC_OPCODE(obj, index)
+             obj.OPCODE(Compiler.STORE_LINK_INDEXED_DYNAMIC, uint32(index));
+        end
+        
+        function STORE_LINK_INDEXED_GRADIENT_OPCODE(obj, index)
+             obj.OPCODE(Compiler.STORE_LINK_INDEXED_GRADIENT, uint32(index));
         end
         
         function LOAD_LINK_INDEXED_DYNAMIC_OPCODE(obj, index)

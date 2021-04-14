@@ -21,8 +21,7 @@ end
               this.indices = parts{2};
               this.parameter_type = numel(this.indices);
               if this.parameter_type > 2
-                  this.indices
-                  xxx
+                  this.error_me(sprintf('Internal error. Parameter type not regocnized: %d', this.parameter_type));
               end
            else
                this.parameter_type = 0;
