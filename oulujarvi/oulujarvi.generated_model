@@ -4,7 +4,6 @@ deploy Detritus
   tag POC = new { B = 138848.2137;  };
   tag DOC = new { B = 1000000;  };
 };
-
 deploy Producer
 {
   K = 540000;
@@ -16,7 +15,7 @@ deploy Producer
   tag Alg3 = new { B = 125050.4856; s = 0.2; igr = 1.1836;  };
   tag Alg4 = new { B = 0.00018404; s = 0.2; igr = 0.97681;  };
   tag Alg5 = new { B = 0.00018404; s = 0.2; igr = 1.2648;  };
-  tag APP = new { B = 1.1331; s = 0.2; igr = 0.6;  };
+  tag APP = new { B = 1.1331; s = 0.2; igr = 2.537;  };
 };
 deploy Consumer
 {
@@ -37,7 +36,6 @@ deploy Consumer
  tag Mys = new { B = 0.00032139; mbr = 0.023951; fm = 0.1; fa = 0.4;  };
  tag Cha = new { B = 0.00032139; mbr = 0.052409; fm = 0.1; fa = 0.4;  };
 };
-
 deploy Fish
 {
   tag Whi0 = new { B = 200; mbr = 0.06393; fm = 0.1; fa = 0.4; avgl = 26.341; lwa = 1; lwb = 1; age = 0; hatchery = 200; invest = 0; catchable = 0; Pmat = 0; bodymass = 1280;   };
@@ -581,4 +579,3 @@ deploy Breeding
  new <Whi0, Whi3, POC> {};
  new <Whi0, Whi4, POC> {};
 };
-

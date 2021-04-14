@@ -7,6 +7,8 @@ classdef VM < handle & matlab.mixin.CustomDisplay
         model
         
         initialized
+        
+        year
 
         %entry_points
         %entry_names
@@ -41,6 +43,7 @@ classdef VM < handle & matlab.mixin.CustomDisplay
             if nargin>1
                 obj.model = model;
             end
+            obj.year = 0;
             obj.code = code;
             obj.ptr = 1;
             %obj.entry_names = {};
@@ -2131,6 +2134,8 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                                     res = parameters{3};
                                 end
                                 obj.stack{end+1} = res;
+                            case Compiler.BUILTIN_T
+                                obj.stack{end+1} = obj.year;                                
                             case Compiler.BUILTIN_LOGNORMAL
                                 parameters = obj.stack(end-2:end);
                                 obj.stack = obj.stack(1:end-3);

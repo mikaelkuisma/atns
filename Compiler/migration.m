@@ -5,10 +5,8 @@ mfilename
 
 %mdef = fullfile(filepath,'LC.mdef')
 %lines = fileread(mdef)
-lines = [ '#include "LC.mdef";' newline ];
 
 fid = fopen(target,'w');
-fprintf(fid, lines);
    %model = ATNModel();
    all = {};
    load(filename, 'Data');
@@ -27,6 +25,13 @@ fprintf(fid, lines);
    if ~isfield(Data, 'communityMatrix')
        Data.communityMatrix = Data.B0 ~= 0;
    end
+   if isfield(options,'modelfile')
+       lines = sprintf('#include "%s";\n', options.modelfile);
+   else
+       lines = [ '#include "LC.mdef";' newline ];
+   end
+   fprintf(fid, lines);
+   
    this.communityMatrix = Data.communityMatrix;
    this.B0 = Data.B0;
    this.d = Data.d;

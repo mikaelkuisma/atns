@@ -1,7 +1,41 @@
 global daylength = 1;
 global stepsperday = 10; 
 global daysperyear = 90;
-global years = 3;
+global years = 150;
 
-#include "oulujarvi.model";
+#include "oulujarvi.generated_model";
 
+// 1. Mallin equilibraatio
+// 2. Kalastus catch
+// 3. Kuka syö ja mitä, ja miten paljon? 
+// 4. Mallin responssianalyysi
+
+deploy Fishery
+{
+  tag WhiFishery = new {};
+};
+
+deploy PerNodeFishing //new period 1999-2013, ajatuksella jos uusimmat on epäluotettavampia, katkaisu aiemmin?
+{
+   startfishing = 50;
+   endfishing = 100;
+   new <Whi0, WhiFishery, POC> { intensity = 0.0013; };
+   new <Whi1, WhiFishery, POC> { intensity = 0.0374; };
+   new <Whi2, WhiFishery, POC> { intensity = 0.1583; };
+   new <Whi3, WhiFishery, POC> { intensity = 0.3629; };
+   new <Whi4, WhiFishery, POC> { intensity = 0.6321; };
+   new <Sme0, WhiFishery, POC> { intensity = 0.0021; };
+   new <Sme1, WhiFishery, POC> { intensity = 0.1674; };
+   new <Sme2, WhiFishery, POC> { intensity = 0.5859; };
+   new <Sme3, WhiFishery, POC> { intensity = 0.9893; };
+   new <Sme4, WhiFishery, POC> { intensity = 2.8172; };
+   new <Ven1, WhiFishery, POC> { intensity = 0.7145; };
+   new <Ven2, WhiFishery, POC> { intensity = 1.6889; };
+   new <Ven3, WhiFishery, POC> { intensity = 5.5553; };
+   new <Ven4, WhiFishery, POC> { intensity = 3.6221; };
+   new <Ppe3, WhiFishery, POC> { intensity = 0.0022; };
+   new <Ppe4, WhiFishery, POC> { intensity = 0.0275; };
+   new <Ppe5, WhiFishery, POC> { intensity = 0.1460; };
+   new <Ppe6, WhiFishery, POC> { intensity = 0.3313; };
+ 
+};

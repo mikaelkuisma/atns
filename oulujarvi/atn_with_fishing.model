@@ -1,0 +1,123 @@
+NodeDef Guild index as i
+{
+   dynamic B_i;
+};
+
+NodeDef Detritus index as i inherits Guild 
+{
+};
+
+NodeDef Producer index as i inherits Guild
+{
+  parameter intra = 2;
+  parameter inter = 1;
+  parameter K = 540000;
+  parameter igr_i;
+  parameter s_i;
+  parameter total = sum_i B_i;
+  parameter Nprod = sum_i 1;
+  parameter A = 1 / (1 + 1/Nprod);
+  parameter g_i = 1 - A*(inter*total+B_i*(intra-inter))/K;
+  parameter grossgrowth_i = igr_i * g_i * B_i;
+  parameter netgrowth_i = (1-s_i)*grossgrowth_i;
+  parameter exudation_i = s_i*grossgrowth_i;
+  .B_i = netgrowth_i;
+};
+
+NodeDef Consumer index as i inherits Guild
+{
+  parameter mbr_i;
+  parameter fa_i;
+  parameter fm_i;
+  parameter effectiveprey_i;
+  parameter consumptiongains_i;
+  parameter maintenancelosses_i = fm_i*mbr_i*B_i;
+  .B_i = -maintenancelosses_i;
+};
+
+LinkDef Feeding <Consumer as i, Guild as j, Detritus as k>
+{
+   parameter e_ij;
+   parameter q_ij;
+   parameter B0_ij;
+   parameter d_ij;
+   parameter y_ij;
+   parameter w_ij;
+   effectiveprey_i += w_ij*(B_j^q_ij);
+   parameter F_ij = w_ij*(B_j^q_ij) / ( B0_ij^q_ij + effectiveprey_i + d_ij * (B0_ij^q_ij)*B_i);
+   parameter feedingrate_ij = mbr_i * y_ij * F_ij * B_i;
+   consumptiongains_i += fa_i * feedingrate_ij;
+   .B_i = fa_i * feedingrate_ij;
+   .B_j = -feedingrate_ij / e_ij;
+   .B_k = feedingrate_ij * (1 / e_ij)*(1-e_ij);
+};
+
+LinkDef Dissolvation <Detritus as i, Detritus as j, Detritus as k>
+{
+  parameter rate;
+  .B_i = -rate*B_i;
+  .B_j = rate*B_i;
+};
+
+LinkDef ProducerExudation <Detritus as i, Producer as j, Detritus as k>
+{
+  .B_i = exudation_j;
+};
+
+NodeDef Fish index as i inherits Consumer
+{
+    parameter avgl_i;
+    parameter lwa_i;
+    parameter lwb_i;
+    parameter age_i;
+    parameter hatchery_i;
+    parameter invest_i;
+    parameter catchable_i;
+    parameter Pmat_i;
+    parameter bodymass_i;
+    dynamic gonads_i;
+
+    parameter R1_i = 0.5 * consumptiongains_i^2 / maintenancelosses_i;
+    parameter R2_i = 0.5 * (2 * consumptiongains_i - maintenancelosses_i);
+    parameter gonadgain_i = invest_i*Pmat_i*@SWITCH(consumptiongains_i-maintenancelosses_i, R1_i, R2_i);
+    parameter fishinglosses_i;
+    .gonads_i = gonadgain_i;
+    .B_i = -gonadgain_i - fishinglosses_i;
+    #B_i = hatchery_i;
+};
+
+LinkDef Ageing <Fish as i, Fish as j, Detritus as k>
+{
+  #B_i = -B_i;
+  #B_j =  B_i;
+};
+
+NodeDef Fishery
+{
+    dynamic catch_i = 0;
+    #catch_i = -catch_i;
+};
+
+LinkDef PerNodeFishing <Fish as i, Fishery as j, Detritus as k>
+{
+   parameter startfishing;
+   parameter endfishing;
+   parameter F = @SWITCH(@T()-startfishing, @SWITCH(@T()-endfishing, 1, 0), 0);
+   parameter intensity_ij;
+   parameter fishrate_ij = F*intensity_ij*B_i/90;
+   fishinglosses_i += fishrate_ij;
+   catch_j += fishrate_ij; 
+};
+
+
+LinkDef Breeding <Fish as i, Fish as j, Detritus as k>
+{
+  #B_i = gonads_j;
+  #gonads_j = -gonads_j;
+};
+
+LinkDef ResetDetritus <Detritus as i, Detritus as j, Detritus as k>
+{
+  #B_i = -B_i + 1e6; // TODO: Min
+};
+
