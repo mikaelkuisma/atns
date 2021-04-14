@@ -92,7 +92,7 @@ LinkDef Ageing <Fish as i, Fish as j, Detritus as k>
   #B_j =  B_i;
 };
 
-NodeDef Fishery
+NodeDef Fishery index as i
 {
     dynamic catch_i = 0;
     #catch_i = -catch_i;
