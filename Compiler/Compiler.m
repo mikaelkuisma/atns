@@ -787,7 +787,7 @@ classdef Compiler < handle
                 xxx
                 obj.LOAD_DYNAMIC_BY_IDX_OPCODE(1, idx);
             elseif strcmp(name, '2B_i')
-                xxx
+                %xxx
                 obj.LOAD_DYNAMIC_BY_IDX_OPCODE(2, idx);
             elseif strcmp(name, '3B_i')
                 xxx

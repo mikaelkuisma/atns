@@ -12,9 +12,8 @@ classdef (Abstract) SEExpression < matlab.mixin.Heterogeneous & handle
            % No need to compile expression, it does not do anything
        end
        
-       function str = repr(this)
-           class(this)
-           error('Internal error.');
+       function str = repr(this)         
+           error(sprintf('Internal error. Class %s does not have repr method defined.', class(this)));
        end
        
        

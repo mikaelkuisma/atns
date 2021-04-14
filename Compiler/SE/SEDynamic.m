@@ -54,6 +54,7 @@ end
         end
        
        function resolve_context(obj, super_context, compiler)
+           try
             if numel(obj.indices)>0
                 super_context.verify_indices(obj.indices);
             end           
@@ -65,6 +66,9 @@ end
                 obj.parameter_type
                 error('internal error');
             end                       
+           catch e
+               obj.error_me(e.message);
+           end
        end
 
    end

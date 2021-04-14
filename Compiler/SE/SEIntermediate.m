@@ -44,9 +44,14 @@ end
                compiler.STORE_PARAMETER_BY_IDX_OPCODE(2, idx);
            elseif strcmp(table_id,'3P_i')
                compiler.STORE_PARAMETER_BY_IDX_OPCODE(3, idx);
-            else
-               this.info
-               error('internal error.');
+           elseif strcmp(table_id, '1B_i')
+               compiler.STORE_GRADIENT_BY_IDX_OPCODE(1, idx);
+           elseif strcmp(table_id, '2B_i')
+               compiler.STORE_GRADIENT_BY_IDX_OPCODE(2, idx);
+           elseif strcmp(table_id, '3B_i')
+               compiler.STORE_GRADIENT_BY_IDX_OPCODE(3, idx);
+           else
+               this.error_me(sprintf('Internal error, unnkown reference type %s', this.info{1}));
            end
            else
                 compiler.ADD_REFERENCE_BY_INFO(this.info);
