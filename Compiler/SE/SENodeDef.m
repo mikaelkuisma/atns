@@ -313,8 +313,28 @@ classdef SENodeDef < SEClassDef
             id = get_indexed_dynamic_id_by_name@SEClassDef(obj, symbol);
         end
 
-        
-        
+
+        function id = get_link_indexed_dynamic_id_by_name(obj, symbol)
+            if obj.link_indexing
+                info = obj.get_info_by_name(symbol);
+                if isempty(info)
+                    xxx
+                    error(['Cannot locate symbol' symbol]);
+                end
+                if isstrprop(info{1}(1),'digit') % We have link_index lookup
+                    id{1} = info{1}(1)-'0';
+                    id{2} = info{2};
+                    return
+                end
+                if ~strcmp(info{1},'B_i')
+                    error(sprintf('Expected indexed dynamic variable for symbol %s.',symbol));
+                end
+                id = info{2};
+                return
+            end       
+            error('internal error');%id = get_link_indexed_dynamic_id_by_name@SEClassDef(obj, symbol);
+        end
+
     end
 
 end

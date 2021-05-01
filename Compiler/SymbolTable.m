@@ -125,6 +125,9 @@ classdef SymbolTable < handle & matlab.mixin.CustomDisplay
         end
 
         function start_pos = push(obj, name, array_index, data_size)
+            if strcmp(name,'feedingrate_ij')
+                1
+            end
             if numel(obj.array_lengths)<array_index
                 assert(isnumeric(array_index));
                 assert(array_index<100);

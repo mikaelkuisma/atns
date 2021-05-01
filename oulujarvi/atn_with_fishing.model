@@ -19,7 +19,7 @@ NodeDef Producer index as i inherits Guild
   parameter A = 1 / (1 + 1/Nprod);
   parameter g_i = 1 - A*(inter*total+B_i*(intra-inter))/K;
   parameter grossgrowth_i = igr_i * g_i * B_i;
-  parameter netgrowth_i = (1-s_i)*grossgrowth_i;
+  output parameter netgrowth_i = (1-s_i)*grossgrowth_i;
   parameter exudation_i = s_i*grossgrowth_i;
   .B_i = netgrowth_i;
 };
@@ -48,7 +48,7 @@ LinkDef Feeding <Consumer as i, Guild as j, Detritus as k>
    parameter F_ij = w_ij*(B_j^q_ij) / ( B0_ij^q_ij + effectiveprey_i + d_ij * (B0_ij^q_ij)*B_i);
    parameter feedingrate_ij = mbr_i * y_ij * F_ij * B_i;
    consumptiongains_i += fa_i * feedingrate_ij;
-   //.totaleaten_ij = feedingrate_ij / e_ij;
+   .totaleaten_ij = feedingrate_ij / e_ij;
    .B_i = fa_i * feedingrate_ij;
    .B_j = -feedingrate_ij / e_ij;
    .B_k = feedingrate_ij * (1 / e_ij)*(1-e_ij);

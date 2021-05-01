@@ -58,8 +58,7 @@ end
                 %super_context
                 %xxx TODO
             else
-                this.parameter_type
-                error('internal error');
+                this.dynamic_table_id = super_context.get_link_indexed_dynamic_id_by_name(this.symbol);
             end    
             catch e
                 rethrow(e);

@@ -9,6 +9,8 @@ classdef VM < handle & matlab.mixin.CustomDisplay
         initialized
         
         year
+        
+        optimize_jit
 
         %entry_points
         %entry_names
@@ -39,9 +41,12 @@ classdef VM < handle & matlab.mixin.CustomDisplay
    end
 
     methods
-        function obj = VM(code, model)
+        function obj = VM(code, model, optimize)
             if nargin>1
                 obj.model = model;
+            end
+            if nargin>2
+                obj.optimize_jit = optimize;
             end
             obj.year = 0;
             obj.code = code;
@@ -290,12 +295,14 @@ classdef VM < handle & matlab.mixin.CustomDisplay
             %obj.call_by_entry_id(1); % Call module .init
             fname = sprintf('temp_gradient_%d.m', floor(rand(1)*1000000));
             fid = fopen(fname,'w');
-            fprintf(fid, 'function dBdt = temp_gradient(B)\n');
+            fprintf(fid, 'function [dBdt] = temp_gradient(B)\n');
             obj.jit_compile_init(fid); % Just copy already set up values
             obj.jit_fromarray(fid,'B'); % Rewrite B here
             obj.jit_compile_update(fid);
             obj.jit_compile_update(fid);
             obj.jit_compile_flatgrad(fid,'B');
+            obj.jit_compile_flatgrad(fid,'B');
+
             fclose(fid);
             gradfun = str2func(fname(1:end-2));
         end
@@ -539,10 +546,7 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                print('-dpng',sprintf('%s_dof_%03d_%s.png', prefix, dof, [ results.tags{dof} '.' results.names{dof} ]),'-r150');
             end
             
-               end
-        
-        
-        
+        end
         
         function results = jit_jacobian(obj, parameterset)
             %parameterset = SolverParameterSet();
@@ -1390,11 +1394,18 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
         function return_value = jit_compile(obj, fid, entrypoint)
             obj.ptr = entrypoint;
             tempstack = {};
-            for i=1:320
-                freevars{i} = sprintf('temp%d', 320-i);
+            for i=1:200
+                freevars{i} = sprintf('temp%d', 200-i);
             end
-            show_opcode=1;
+            show_opcode=0;
+            optimize = obj.optimize_jit;
             while 1
+                %for xxx=1:numel(freevars)
+                %    if ~startsWith(freevars{xxx},'temp')
+                %        asdsa
+                %end
+                %tempstack
+                %freevars
                 ip_start = obj.ptr;
                 op = obj.code(obj.ptr); obj.ptr = obj.ptr + 1;
                 parameter_size = Compiler.PAR_COUNTS(op+1);
@@ -1412,6 +1423,8 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                 if show_opcode
                     fprintf(fid, '%% %04x %s %d\n', obj.ptr, Compiler.get_name_by_opcode(op), data);
                 end
+                %fprintf('%% %04x %s %d\n', obj.ptr, Compiler.get_name_by_opcode(op), data);
+
                 context = obj.context_stack{end};
                 switch op
                     case Compiler.DOUBLE_CONSTANT_COUNT
@@ -1419,42 +1432,126 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                     case Compiler.ENTRY_COUNT
                         error('Not allowed in JIT function.');
                     case Compiler.LOAD_CONSTANT_8
-                        tempstack{end+1} = freevars{end}; freevars = freevars(1:end-1);
-                        fprintf(fid, "%s = %.15f;\n", tempstack{end}, obj.constants(data));
+                        if optimize
+                            tempstack{end+1} = obj.constants(data);
+                        else
+                            tempstack{end+1} = freevars{end}; freevars = freevars(1:end-1);
+                            fprintf(fid, "%s = %.15f;\n", tempstack{end}, obj.constants(data));
+                        end
                     case Compiler.ADD_OPERATOR
-                        fprintf(fid, '%s = %s + %s;\n', tempstack{end-1}, tempstack{end-1}, tempstack{end});
-                        freevars{end+1} = tempstack{end};
-                        tempstack = tempstack(1:end-1);
+                        if optimize
+                           B = char(string(tempstack{end})); tempstack = tempstack(1:end-1);
+                           A = char(string(tempstack{end})); tempstack = tempstack(1:end-1);
+                           if startsWith(A,'temp'),freevars{end+1} = A;end
+                           if startsWith(B,'temp'),freevars{end+1} = B;end
+                           C = freevars{end};
+                           freevars=freevars(1:end-1);
+                           fprintf(fid, '%s = %s + %s;\n', C, A, B);
+                           tempstack{end+1} = C;
+                        else
+                            fprintf(fid, '%s = %s + %s;\n', tempstack{end-1}, tempstack{end-1}, tempstack{end});
+                            if startsWith(char(string(tempstack{end})),'temp'),freevars{end+1} = tempstack{end};end
+                            tempstack = tempstack(1:end-1);
+                        end
+                        %fprintf(fid, '%s = %s + %s;\n', C, tostr(tempstack{end-1}), tostr(tempstack{end}));
                     case Compiler.SUB_OPERATOR
-                        fprintf(fid, '%s = %s - %s;\n', tempstack{end-1}, tempstack{end-1}, tempstack{end});
-                        freevars{end+1} = tempstack{end};
-                        tempstack = tempstack(1:end-1);
+                        if optimize
+                           B = char(string(tempstack{end})); tempstack = tempstack(1:end-1);
+                           A = char(string(tempstack{end})); tempstack = tempstack(1:end-1);
+                           if startsWith(A,'temp'),freevars{end+1} = A;end
+                           if startsWith(B,'temp'),freevars{end+1} = B;end
+                           C = freevars{end}; freevars=freevars(1:end-1);
+                           fprintf(fid, '%s = %s - %s;\n', C, A, B);
+                           tempstack{end+1} = C;
+                        else
+                           fprintf(fid, '%s = %s - %s;\n', tempstack{end-1}, tempstack{end-1}, tempstack{end});
+                           freevars{end+1} = tempstack{end};
+                           tempstack = tempstack(1:end-1);
+                        end
                     case Compiler.MUL_OPERATOR
-                        fprintf(fid, '%s = %s * %s;\n', tempstack{end-1}, tempstack{end-1}, tempstack{end});
-                        freevars{end+1} = tempstack{end};
-                        tempstack = tempstack(1:end-1);
+                        if optimize
+                           B = char(string(tempstack{end})); tempstack = tempstack(1:end-1);
+                           A = char(string(tempstack{end})); tempstack = tempstack(1:end-1);
+                           if startsWith(A,'temp'),freevars{end+1} = A;end
+                           if startsWith(B,'temp'),freevars{end+1} = B;end
+                           C = freevars{end}; freevars=freevars(1:end-1);
+                           fprintf(fid, '%s = %s * %s;\n', C, A, B);
+                           tempstack{end+1} = C;
+                        else
+                           fprintf(fid, '%s = %s * %s;\n', tempstack{end-1}, tempstack{end-1}, tempstack{end});
+                           freevars{end+1} = tempstack{end};
+                           tempstack = tempstack(1:end-1);
+                        end
                     case Compiler.DIV_OPERATOR
-                        fprintf(fid, '%s = %s / %s;\n', tempstack{end-1}, tempstack{end-1}, tempstack{end});
-                        freevars{end+1} = tempstack{end};
-                        tempstack = tempstack(1:end-1);
+                        if optimize
+                           B = char(string(tempstack{end})); tempstack = tempstack(1:end-1);
+                           A = char(string(tempstack{end})); tempstack = tempstack(1:end-1);
+                           if startsWith(A,'temp'),freevars{end+1} = A;end
+                           if startsWith(B,'temp'),freevars{end+1} = B;end
+                           C = freevars{end}; freevars=freevars(1:end-1);
+                           fprintf(fid, '%s = %s / %s;\n', C, A, B);
+                           tempstack{end+1} = C;
+                        else
+                           fprintf(fid, '%s = %s / %s;\n', tempstack{end-1}, tempstack{end-1}, tempstack{end});
+                           freevars{end+1} = tempstack{end};
+                           tempstack = tempstack(1:end-1);
+                        end
                     case Compiler.POW_OPERATOR
-                        fprintf(fid, '%s = %s ^ %s;\n', tempstack{end-1}, tempstack{end-1}, tempstack{end});
-                        freevars{end+1} = tempstack{end};
-                        tempstack = tempstack(1:end-1);
+                        if optimize
+                           B = char(string(tempstack{end})); tempstack = tempstack(1:end-1);
+                           A = char(string(tempstack{end})); tempstack = tempstack(1:end-1);
+                           if startsWith(A,'temp'),freevars{end+1} = A;end
+                           if startsWith(B,'temp'),freevars{end+1} = B;end                          
+                           C = freevars{end}; freevars=freevars(1:end-1);
+                           fprintf(fid, '%s = %s ^ %s;\n', C,A, B);
+                           tempstack{end+1} = C;
+                        else
+                           fprintf(fid, '%s = %s ^ %s;\n', tempstack{end-1}, tempstack{end-1}, tempstack{end});
+                           freevars{end+1} = tempstack{end};
+                           tempstack = tempstack(1:end-1);
+                        end
                     case Compiler.UNARY_MINUS
-                        fprintf(fid, '%s = -%s;\n', tempstack{end}, tempstack{end});
+                        if optimize
+                           if isnumeric(tempstack{end})
+                               tempstack{end} = -tempstack{end};
+                           else
+                               A = char(string(tempstack{end})); tempstack = tempstack(1:end-1);
+                               if startsWith(A,'temp'),freevars{end+1} = A;end
+                               C = freevars{end};
+                               freevars=freevars(1:end-1);
+                               fprintf(fid, '%s = -%s;\n', C, A);
+                               tempstack{end+1} = C;
+                           end
+                        else
+                            fprintf(fid, '%s = -%s;\n', tempstack{end}, tempstack{end});
+                        end
                     case Compiler.LOAD_PARAMETER
-                        paramname = sprintf('%s_%s', context.classname, context.vmclass.parameter_names{data});
-                        tempstack{end+1} = freevars{end}; freevars = freevars(1:end-1);
-                        fprintf(fid, '%s = %s;\n', tempstack{end}, paramname);
+                        if optimize
+                            tempstack{end+1} = sprintf('%s_%s', context.classname, context.vmclass.parameter_names{data});
+                        else
+                            paramname = sprintf('%s_%s', context.classname, context.vmclass.parameter_names{data});
+                            tempstack{end+1} = freevars{end}; freevars = freevars(1:end-1);
+                            fprintf(fid, '%s = %s;\n', tempstack{end}, paramname);
+                        end
                     case Compiler.STORE_PARAMETER
-                        %fprintf('storing to parameter %d of %s\n', data, context.classname);
-                        fprintf(fid, '%s_%s = %s;\n', context.classname, context.vmclass.parameter_names{data}, tempstack{end});
-                        freevars{end+1} = tempstack{end}; tempstack = tempstack(1:end-1); % Pop
+                        if optimize
+                            fprintf(fid, '%s_%s = %s;\n', context.classname, context.vmclass.parameter_names{data}, tempstack{end});
+                            if startsWith(char(string(tempstack{end})),'temp'),freevars{end+1} = tempstack{end};end
+                            tempstack = tempstack(1:end-1); % Pop
+                        else
+                            %fprintf('storing to parameter %d of %s\n', data, context.classname);
+                            fprintf(fid, '%s_%s = %s;\n', context.classname, context.vmclass.parameter_names{data}, tempstack{end});
+                            freevars{end+1} = tempstack{end}; 
+                            tempstack = tempstack(1:end-1); % Pop
+                        end
                     case Compiler.LOAD_DYNAMIC
-                        dynname = sprintf('%s_%s', context.classname, context.vmclass.dynamic_names{data});
-                        tempstack{end+1} = freevars{end}; freevars = freevars(1:end-1);
-                        fprintf(fid, '%s = %s;\n', tempstack{end}, dynname);
+                        if optimize
+                            tempstack{end+1} = sprintf('%s_%s', context.classname, context.vmclass.parameter_names{data});
+                        else
+                            dynname = sprintf('%s_%s', context.classname, context.vmclass.dynamic_names{data});
+                            tempstack{end+1} = freevars{end}; freevars = freevars(1:end-1);
+                            fprintf(fid, '%s = %s;\n', tempstack{end}, dynname);
+                        end
                     case Compiler.STORE_DYNAMIC
                         error('TODO');
                         %obj.flat_store_dynamic(data, obj.stack{end});
@@ -1462,9 +1559,18 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                         context.dynamic{data} = obj.stack{end};
                         obj.stack = obj.stack(1:end-1);
                     case Compiler.STORE_GRADIENT
-                        gradname = sprintf('d%s_%sdt', context.classname, context.vmclass.dynamic_names{data});
-                        fprintf(fid, '%s = %s + %s;\n', gradname, gradname, tempstack{end});
-                        freevars{end+1} = tempstack{end}; tempstack = tempstack(1:end-1); % Pop
+                        if optimize
+                            gradname = sprintf('d%s_%sdt', context.classname, context.vmclass.dynamic_names{data});
+                            fprintf(fid, '%s = %s + %s;\n', gradname, gradname, tempstack{end});
+                            if startsWith(char(string(tempstack{end})),'temp'),freevars{end+1} = tempstack{end};end
+                            tempstack = tempstack(1:end-1); % Pop
+                        else
+                            gradname = sprintf('d%s_%sdt', context.classname, context.vmclass.dynamic_names{data});
+                            fprintf(fid, '%s = %s + %s;\n', gradname, gradname, tempstack{end});
+                            freevars{end+1} = tempstack{end}; tempstack = tempstack(1:end-1); % Pop
+                        end
+                        fprintf(fid, 'fprintf(''%%s %%.10f'',%s)\n', gradname,gradname);
+                        fprintf(fid,'pause\n');
                     case Compiler.DOUBLE_DYNAMIC_COUNT                        
                         error('TODO');
                         %obj.dynamic = cell(1,data); % Allocate dynamic variables
@@ -1602,14 +1708,42 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                                 error('TODO');
                                 obj.stack{end+1}=rand();
                             case Compiler.BUILTIN_EXP
-                                fprintf(fid, '%s = exp(%s);\n', tempstack{end}, tempstack{end});
+                                if optimize
+                                   if isnumeric(tempstack{end})
+                                       tempstack{end} = exp(tempstack{end});
+                                   else
+                                       A = tempstack{end}; tempstack = tempstack(1:end-1);
+                                       if startsWith(A,'temp'),freevars{end+1} = A;end
+                                       C = freevars{end};
+                                       freevars=freevars(1:end-1);
+                                       fprintf(fid, '%s = exp(%s);\n', C, string(A), string(B));
+                                       tempstack{end+1} = C;
+                                   end
+                                else
+                                    fprintf(fid, '%s = exp(%s);\n', tempstack{end}, tempstack{end});
+                                end
                             case Compiler.BUILTIN_LN
-                                fprintf(fid, '%s = log(%s);\n', tempstack{end}, tempstack{end});                                
+                                if optimize
+                                   if isnumeric(tempstack{end})
+                                       tempstack{end} = log(tempstack{end});
+                                   else
+                                       A = tempstack{end}; tempstack = tempstack(1:end-1);
+                                       if startsWith(A,'temp'),freevars{end+1} = A;end
+                                       C = freevars{end};
+                                       freevars=freevars(1:end-1);
+                                       fprintf(fid, '%s = log(%s);\n', C, string(A), string(B));
+                                       tempstack{end+1} = C;
+                                   end
+                                else
+                                    fprintf(fid, '%s = log(%s);\n', tempstack{end}, tempstack{end});    
+                                end
                             case Compiler.BUILTIN_SWITCH
-                                fprintf(fid, 'if %s < 0\n', tempstack{end-2});
-                                fprintf(fid, '  %s = %s;\n', freevars{end}, tempstack{end-1});
+                                fprintf(fid, 'if %s < 0\n', string(tempstack{end-2}));
+                                freevars
+                                tempstack
+                                fprintf(fid, '  %s = %s;\n', freevars{end}, char(string(tempstack{end-1})));
                                 fprintf(fid, 'else\n');
-                                fprintf(fid, '  %s = %s;\n', freevars{end}, tempstack{end});
+                                fprintf(fid, '  %s = %s;\n', freevars{end}, char(string(tempstack{end})));
                                 fprintf(fid, 'end\n');
                                 tempstack = tempstack(1:end-3);
                                 tempstack{end+1} = freevars{end};
@@ -1708,10 +1842,9 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                         tag = obj.code(obj.ptr:obj.ptr+strlen-1); obj.ptr = obj.ptr + strlen;
                         context.new_indexed(tag);
                     case Compiler.STORE_INDEXED_PARAMETER
-                        fprintf(fid, "%s = %s;\n", context.load_indexed_parameter_ref(data), tempstack{end});
-                        
-                        % pop
-                        freevars{end+1} = tempstack{end}; tempstack = tempstack(1:end-1);
+                        fprintf(fid, '%s = %s;\n', context.load_indexed_parameter_ref(data), char(string(tempstack{end})));                        
+                        if startsWith(char(string(tempstack{end})),'temp'),freevars{end+1} = tempstack{end};end
+                        tempstack = tempstack(1:end-1);
                     case Compiler.ADD_INDEXED_PARAMETER
                         error('TODO');
                         context.add_indexed_parameter(data, obj.stack{end});
@@ -1722,8 +1855,8 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                         obj.stack = obj.stack(1:end-1);
                     case Compiler.STORE_INDEXED_GRADIENT
                         varname = context.load_indexed_dynamic_ref(data);
-                        fprintf(fid, "d%sdt = d%sdt + %s;\n", varname, varname, tempstack{end});
-                        freevars{end+1} = tempstack{end}; 
+                        fprintf(fid, 'd%sdt = d%sdt + %s;\n', varname, varname, char(string(tempstack{end})));
+                        if startsWith(char(string(tempstack{end})),'temp'),freevars{end+1} = tempstack{end};end
                         tempstack = tempstack(1:end-1);
                     case Compiler.END_DEPLOY
                         error('TODO');
@@ -1732,11 +1865,19 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                         %error('TODO');
                         context.index_loop(); % Reset counter
                     case Compiler.LOAD_INDEXED_PARAMETER
-                        tempstack{end+1} = freevars{end}; freevars = freevars(1:end-1); % push
-                        fprintf(fid, '%s = %s;\n', tempstack{end}, context.load_indexed_parameter_ref(data));
+                        if optimize
+                            tempstack{end+1} = context.load_indexed_parameter_ref(data);
+                        else
+                            tempstack{end+1} = freevars{end}; freevars = freevars(1:end-1); % push
+                            fprintf(fid, '%s = %s;\n', tempstack{end}, context.load_indexed_parameter_ref(data));
+                        end
                     case Compiler.LOAD_INDEXED_DYNAMIC
-                        tempstack{end+1} = freevars{end}; freevars = freevars(1:end-1);
-                        fprintf(fid, "%s = %s;\n", tempstack{end}, context.load_indexed_dynamic_ref(data));
+                        if optimize
+                            tempstack{end+1} = context.load_indexed_dynamic_ref(data);
+                        else
+                            tempstack{end+1} = freevars{end}; freevars = freevars(1:end-1);
+                            fprintf(fid, "%s = %s;\n", tempstack{end}, context.load_indexed_dynamic_ref(data));
+                        end
                     case Compiler.INDEX_JUMP
                         if context.next_index()
                            obj.ptr = data; 
@@ -1746,72 +1887,116 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                         tempstack{end+1} = freevars{end}; freevars = freevars(1:end-1);
                         fprintf(fid, "%s = 0;\n", tempstack{end}); % Push accumulated value to stack
                     case Compiler.SUM_JUMP
-                        fprintf(fid, '%s = %s + %s;\n', tempstack{end-1}, tempstack{end-1}, tempstack{end});
-                        freevars{end+1} = tempstack{end};
-                        tempstack = tempstack(1:end-1);
+                        if optimize
+                           B = char(string(tempstack{end})); tempstack = tempstack(1:end-1);
+                           A = char(string(tempstack{end})); tempstack = tempstack(1:end-1);
+                           if startsWith(A,'temp'),freevars{end+1} = A;end
+                           if startsWith(B,'temp'),freevars{end+1} = B;end
+                           C = freevars{end}; freevars=freevars(1:end-1);
+                           fprintf(fid, '%s = %s + %s;\n', C, A, B);
+                           tempstack{end+1} = C;                            
+                        else
+                            fprintf(fid, '%s = %s + %s;\n', tempstack{end-1}, tempstack{end-1}, char(string(tempstack{end})));
+                            if startsWith(char(string(tempstack{end})),'temp'),freevars{end+1} = tempstack{end};end
+                            tempstack = tempstack(1:end-1);
+                        end
                         if context.next_index()
-                           obj.ptr = data; 
+                           obj.ptr = data;
                         end
                     case Compiler.DOUBLE_LINK_INDEXED_PARAMETER_COUNT
                         error('TODO');
                         link_indexed_parameter_names_remaining = data;
                     case Compiler.STORE_GRADIENT_BY_IDX_1
-                        varname = context.dynamic_by_idx_ref(obj, 1,data);
-                        fprintf(fid, 'd%sdt = d%sdt + %s;\n', varname, varname, tempstack{end});
-                        freevars{end+1} = tempstack{end}; tempstack = tempstack(1:end-1); % pop
+                        if optimize
+                            varname = context.dynamic_by_idx_ref(obj, 1,data);
+                            fprintf(fid, 'd%sdt = d%sdt + %s;\n', varname, varname, char(string(tempstack{end})));
+                            if startsWith(char(string(tempstack{end})),'temp'),freevars{end+1} = tempstack{end};end
+                            tempstack = tempstack(1:end-1); % Pop
+                        else
+                            varname = context.dynamic_by_idx_ref(obj, 1,data);
+                            fprintf(fid, 'd%sdt = d%sdt + %s;\n', varname, varname, char(string(tempstack{end})));
+                            if startsWith(char(string(tempstack{end})),'temp'),freevars{end+1} = tempstack{end};end
+                            tempstack = tempstack(1:end-1); % pop
+                        end
                     case Compiler.STORE_GRADIENT_BY_IDX_2
                         varname = context.dynamic_by_idx_ref(obj, 2,data);
-                        fprintf(fid, 'd%sdt = d%sdt + %s;\n', varname, varname, tempstack{end});
-                        freevars{end+1} = tempstack{end}; tempstack = tempstack(1:end-1); % pop
+                        fprintf(fid, 'd%sdt = d%sdt + %s;\n', varname, varname, char(string(tempstack{end})));
+                        if ~optimize | startsWith(char(string(tempstack{end})),'temp'),freevars{end+1} = tempstack{end};end
+                        tempstack = tempstack(1:end-1); % pop
                     case Compiler.STORE_GRADIENT_BY_IDX_3
                         varname = context.dynamic_by_idx_ref(obj, 3,data);
-                        fprintf(fid, 'd%sdt = d%sdt + %s;\n', varname, varname, tempstack{end});
-                        freevars{end+1} = tempstack{end}; tempstack = tempstack(1:end-1); % pop
+                        fprintf(fid, 'd%sdt = d%sdt + %s;\n', varname, varname, char(string(tempstack{end})));
+                        if ~optimize | startsWith(char(string(tempstack{end})),'temp'),freevars{end+1} = tempstack{end};end
+                        tempstack = tempstack(1:end-1); % pop
                     case Compiler.LOAD_DYNAMIC_BY_IDX_1
-                        tempstack{end+1} = freevars{end}; freevars = freevars(1:end-1); % push
-                        fprintf(fid, '%s = %s;\n', tempstack{end}, context.dynamic_by_idx_ref(obj, 1,data));
+                        if optimize
+                            tempstack{end+1} = context.dynamic_by_idx_ref(obj, 1,data);
+                        else
+                            tempstack{end+1} = freevars{end}; freevars = freevars(1:end-1); % push
+                            fprintf(fid, '%s = %s;\n', tempstack{end}, context.dynamic_by_idx_ref(obj, 1,data));
+                        end
                     case Compiler.LOAD_DYNAMIC_BY_IDX_2
-                        tempstack{end+1} = freevars{end}; freevars = freevars(1:end-1); % push
-                        fprintf(fid, '%s = %s;\n', tempstack{end}, context.dynamic_by_idx_ref(obj, 2,data));
+                        if optimize
+                            tempstack{end+1} = context.dynamic_by_idx_ref(obj, 2,data);
+                        else
+                            tempstack{end+1} = freevars{end}; freevars = freevars(1:end-1); % push
+                            fprintf(fid, '%s = %s;\n', tempstack{end}, context.dynamic_by_idx_ref(obj, 2,data));
+                        end
                     case Compiler.LOAD_DYNAMIC_BY_IDX_3
-                        tempstack{end+1} = freevars{end}; freevars = freevars(1:end-1); % push
-                        fprintf(fid, '%s = %s;\n', tempstack{end}, context.dynamic_by_idx_ref(obj, 3,data));
+                        if optimize
+                            tempstack{end+1} = context.dynamic_by_idx_ref(obj, 3,data);
+                        else
+                            tempstack{end+1} = freevars{end}; freevars = freevars(1:end-1); % push
+                            fprintf(fid, '%s = %s;\n', tempstack{end}, context.dynamic_by_idx_ref(obj, 3,data));
+                        end
                     case Compiler.LOAD_PARAMETER_BY_IDX_1
-                        tempstack{end+1} = freevars{end}; freevars = freevars(1:end-1); % push
-                        fprintf(fid, '%s = %s;\n', tempstack{end}, context.parameter_by_idx_ref(obj, 1,data));
+                        if optimize
+                            tempstack{end+1} = context.parameter_by_idx_ref(obj, 1,data);
+                        else
+                            tempstack{end+1} = freevars{end}; freevars = freevars(1:end-1); % push
+                            fprintf(fid, '%s = %s;\n', tempstack{end}, context.parameter_by_idx_ref(obj, 1,data));
+                        end
                     case Compiler.LOAD_PARAMETER_BY_IDX_2
-                        tempstack{end+1} = freevars{end}; freevars = freevars(1:end-1); % push
-                        fprintf(fid, '%s = %s;\n', tempstack{end}, context.parameter_by_idx_ref(obj, 2,data));
+                        if optimize
+                            tempstack{end+1} = context.parameter_by_idx_ref(obj, 2,data);
+                        else
+                            tempstack{end+1} = freevars{end}; freevars = freevars(1:end-1); % push
+                            fprintf(fid, '%s = %s;\n', tempstack{end}, context.parameter_by_idx_ref(obj, 2,data));
+                        end
                     case Compiler.LOAD_PARAMETER_BY_IDX_3
-                        tempstack{end+1} = freevars{end}; freevars = freevars(1:end-1); % push
-                        fprintf(fid, '%s = %s;\n', tempstack{end}, context.parameter_by_idx_ref(obj, 3,data));
+                        if optimize
+                            tempstack{end+1} = context.parameter_by_idx_ref(obj, 3,data);
+                        else
+                            tempstack{end+1} = freevars{end}; freevars = freevars(1:end-1); % push
+                            fprintf(fid, '%s = %s;\n', tempstack{end}, context.parameter_by_idx_ref(obj, 3,data));
+                        end
                     case Compiler.ADD_PARAMETER_BY_IDX_1
                         varname = context.parameter_by_idx_ref(obj, 1,data);
-                        fprintf(fid, '%s = %s + %s;\n', varname, varname, tempstack{end});
+                        fprintf(fid, '%s = %s + %s;\n', varname, varname, char(string(tempstack{end})));
                         % pop
-                        freevars{end+1} = tempstack{end}; 
+                        if ~optimize | startsWith(char(string(tempstack{end})),'temp'),freevars{end+1} = tempstack{end};end
                         tempstack = tempstack(1:end-1);
                     case Compiler.ADD_PARAMETER_BY_IDX_2
                         varname = context.parameter_by_idx_ref(obj, 2,data);
-                        fprintf(fid, '%s = %s + %s;\n', varname, varname, tempstack{end});
+                        fprintf(fid, '%s = %s + %s;\n', varname, varname, char(string(tempstack{end})));
                         % pop
-                        freevars{end+1} = tempstack{end}; 
+                        if ~optimize | startsWith(char(string(tempstack{end})),'temp'),freevars{end+1} = tempstack{end};end
                         tempstack = tempstack(1:end-1);
                     case Compiler.ADD_PARAMETER_BY_IDX_3
-                        varname = context.parameter_by_idx_ref(obj, 1,data);
-                        fprintf(fid, '%s = %s + %s;\n', varname, varname, tempstack{end});
+                        varname = context.parameter_by_idx_ref(obj, 3,data);
+                        fprintf(fid, '%s = %s + %s;\n', varname, varname, char(string(tempstack{end})));
                         % pop
-                        freevars{end+1} = tempstack{end}; 
+                        if ~optimize | startsWith(char(string(tempstack{end})),'temp'),freevars{end+1} = tempstack{end};end
                         tempstack = tempstack(1:end-1);
                     case Compiler.STORE_PARAMETER_BY_IDX_1
-                        fprintf(fid, '%s = %s;\n', context.parameter_by_idx_ref(obj, 1,data), tempstack{end});
+                        fprintf(fid, '%s = %s;\n', context.parameter_by_idx_ref(obj, 1,data), char(string(tempstack{end})));
                         % pop
-                        freevars{end+1} = tempstack{end}; 
+                        if ~optimize | startsWith(char(string(tempstack{end})),'temp'),freevars{end+1} = tempstack{end};end
                         tempstack = tempstack(1:end-1);
                     case Compiler.STORE_PARAMETER_BY_IDX_2
-                        fprintf(fid, '%s = %s;\n', context.parameter_by_idx_ref(obj, 2,data), tempstack{end});
+                        fprintf(fid, '%s = %s;\n', context.parameter_by_idx_ref(obj, 2,data), char(string(tempstack{end})));
                         % pop
-                        freevars{end+1} = tempstack{end}; 
+                        if ~optimize | startsWith(char(string(tempstack{end})),'temp'),freevars{end+1} = tempstack{end};end
                         tempstack = tempstack(1:end-1);
                     case Compiler.STORE_PARAMETER_BY_IDX_3
                         error('TODO');
@@ -1822,11 +2007,16 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                            obj.ptr = data; 
                         end
                     case Compiler.STORE_LINK_INDEXED_PARAMETER
-                        fprintf(fid, '%s = %s;\n', context.link_indexed_parameter_ref(data), tempstack{end});
-                        freevars{end+1} = tempstack{end}; tempstack = tempstack(1:end-1); 
+                        fprintf(fid, '%s = %s;\n', context.link_indexed_parameter_ref(data), char(string(tempstack{end})));
+                        if ~optimize | startsWith(char(string(tempstack{end})),'temp'),freevars{end+1} = tempstack{end};end
+                        tempstack = tempstack(1:end-1); 
                     case Compiler.LOAD_LINK_INDEXED_PARAMETER
-                        tempstack{end+1} = freevars{end}; freevars = freevars(1:end-1);
-                        fprintf(fid, '%s = %s;\n', tempstack{end}, context.link_indexed_parameter_ref(data));
+                        if optimize
+                            tempstack{end+1} = context.link_indexed_parameter_ref(data);
+                        else
+                            tempstack{end+1} = freevars{end}; freevars = freevars(1:end-1);
+                            fprintf(fid, '%s = %s;\n', tempstack{end}, context.link_indexed_parameter_ref(data));
+                        end
                     case Compiler.LINK_LOOP
                         context.link_loop(obj);
                     case Compiler.DISPLAY

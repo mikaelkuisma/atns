@@ -13,7 +13,7 @@
 % EXPRESSION := SUMEXPRESSION | NEWEXPRESSION | TERM { ADDOP TERM };
 % NEWEXPRESSION := 'new' [ '<' LITERAL ',' LITERAL ',' LITERAL ',' '>' ] {' STATEMENTLIST '}'
 % EXPRESSION_LIST := EXPRESSION { ',' EXPRESSION };
-% VALIDLVALUE := [ 'parameter' | 'dynamic' | 'volatile' | 'intermediate' | 'tag' | 'global'] VALIDREF;
+% VALIDLVALUE :=['output'] [ 'parameter' | 'dynamic' | 'volatile' | 'intermediate' | 'tag' | 'global'] VALIDREF;
 % VALIDGRADIENT := '.' VALIDREF;
 % VALIDEPOCH := '#' VALIDREF;
 % LHS := (VALIDLVALUE | VALIDGRADIENT | VALIDEPOCH);
@@ -469,11 +469,32 @@ classdef Parser < handle
             text = obj.tokenizer.get_data();
         end
         
-        % VALIDLVALUE := [ parameter | dynamic | volatile | intermediate ] VALIDREF
+        function [output, success] = parse_OUTPUT(obj)
+            output=0;
+            success=1;
+
+            obj.tokenizer.push_ptr();
+            if (obj.tokenizer.peek_type() ~= Tokenizer.TOKEN_LITERAL)
+                obj.tokenizer.pop_ptr();
+                return
+            end
+            literal = obj.tokenizer.get_data();
+            if strcmp(literal,'output')
+                output=1;
+                return
+            end
+            obj.tokenizer.pop_ptr();
+        end
+
+        
+        % VALIDLVALUE := ['output'] [ parameter | dynamic | volatile | intermediate ] VALIDREF
         function [ lhs, success ] = parse_VALIDLVALUE(obj)
             try
             obj.tokenizer.push_ptr();
-            
+            [output, success] = obj.parse_OUTPUT();
+            % Output will be true or false, false if it did not exists.
+            % Success always since optional.
+
             if (obj.tokenizer.peek_type() ~= Tokenizer.TOKEN_LITERAL)
                 lhs = [];
                 success = false;
@@ -506,16 +527,31 @@ classdef Parser < handle
                 end            
             success = true;
             if strcmp(lvalue_type, 'parameter')
-                lhs = SEParameter(literal);
+                lhs = SEParameter(literal,output);
             elseif strcmp(lvalue_type, 'dynamic')
-                lhs = SEDynamic(literal);
+                if output
+                    warning('Neglecting output keyword');
+                end
+                lhs = SEDynamic(literal,output);
             elseif strcmp(lvalue_type, 'volatile')
+                if output
+                    warning('Neglecting output keyword');
+                end
                 lhs = SEVolatile(literal);
             elseif strcmp(lvalue_type, 'tag')    
+                if output
+                    warning('Neglecting output keyword');
+                end
                 lhs = SETag(literal);
             elseif strcmp(lvalue_type, 'global')
+                if output
+                    warning('Neglecting output keyword');
+                end
                 lhs = SEGlobal(literal);
             elseif strcmp(lvalue_type, 'intermediate')
+                if output
+                    warning('Neglecting output keyword');
+                end
                 lhs = SEIntermediate(literal);
             else
                 error('Internal error.');
@@ -523,11 +559,14 @@ classdef Parser < handle
             lhs.token_ptr = obj.tokenizer.token_ptr;
 
             catch e
+                if startsWith(e.identifier,'MATLAB')
+                    rethrow(e);
+                end
                 if contains(e.message,'col')
                     rethrow(e);
                 end
                 e.message
-                obj.error(obj.tokenizer.token_ptr, e.message);
+                obj.error(e.message,obj.tokenizer.token_ptr);
             end
 
          end

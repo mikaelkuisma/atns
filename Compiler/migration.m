@@ -36,7 +36,7 @@ fid = fopen(target,'w');
    this.B0 = Data.B0;
    this.d = Data.d;
    this.y = Data.y;
-   this.q = (Data.q>1)*1.0;
+   this.q = Data.q;%>1)*1.0;
    
    this.K = Data.K;
    this.e = Data.e;

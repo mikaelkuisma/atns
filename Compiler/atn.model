@@ -87,6 +87,84 @@ LinkDef Feeding <Consumer as i, Guild as j, Detritus as k>
    .B_k = feedingrate_ij * (1 / e_ij)*(1-e_ij);
 };
 
+// New way
+//
+//LinkDef Feeding <Consumer as i, Guild as j, Detritus as k>
+//{
+//   parameter e_ij;
+//   parameter q_ij;
+//   parameter B0_ij;
+//   parameter d_ij;
+//   parameter y_ij;
+//   parameter w_ij;
+//   effectiveprey_i += w_ij*(B_j^q_ij);
+//   parameter F_ij = w_ij*(B_j^q_ij) / ( B0_ij^q_ij + effectiveprey_i + d_ij * (B0_ij^q_ij)*B_i);
+//   //parameter F_ij = w_ij*(B_j) / ( B0_ij + effectiveprey_i + d_ij * (B0_ij)*B_i);
+//   parameter feedingrate_ij = mbr_i * y_ij * F_ij * B_i;
+//   consumptiongains_i += fa_i * feedingrate_ij;
+//   consumptionlosses_j += feedingrate_ij / e_ij;
+//   .B_i = fa_i * feedingrate_ij;
+//*  dB_i/dt = , 
+//   dB_ig/dt = fa_i * feedingrate_igj
+//    B_i = P(B_ig)
+//    dB_i/dt = dP(B_ig)/dt = \sum_g (dP_i/dB_i'g) dB_i'g/dt
+//    P_i(B_i'g) = delta_ii' \sum_g B_ig
+//    dP_i(B_i'g)/dB_i''g' = delta_ii'
+//    Pseudo inverse would thus be
+//    1 1 1 1 1
+//    1/N 1 1 1 1 1 1 '
+//   .B_j = -feedingrate_ij / e_ij;
+//   .B_k = feedingrate_ij * (1 / e_ij)*(1-e_ij);
+//};
+// Another example. Fishing function
+// F(B_il) = exp(-(L_il-20cm)^2/10cm)
+// dB_i/dt = -F(B_i)*B_i
+
+// Contraction: Real data B_ab, utilizing only B_b
+// Expansion: Real data B_a, utilizing B_al, then projecting back to B_a.
+// Perspective is just a function.
+// P( real data índex structure ) = perspective data indec structure
+// Default perspective, P() = I identity map
+// General case dP_1( B )/dt = P_1( f( P_2( D_i ), P_3( A_i) )).
+
+// Left hand side contractive
+// dP_1( B )/dt = dP_1/d 
+// index l analyticcontinuous.
+// Perspective B_i(l) = B_i exp(-(L_i-l)^2), other way around B_i = int dl B_i(l)
+// Continuous variables are represented with parenthesis,
+// Discrete with underscore. There is no practical difference.
+
+// Fishnet F(l) = exp(-(N_i-l)^2/10cm)
+// Fishing mortality
+// d(B_i as B_i(l))/dt = F(l) B_i(l)
+// \sum_l exp(-(L_i-l)^2) dB_i/dt = F(l) B_i(l)
+// exp(-(L_i-l)^2) dB_i/dt = F(l) B_i(l)
+// dB_i/dt = (B_i(l) to B_i) { F(l) B_i(l) };
+// dB_i/dt = int dl B_i(l) F(l) B_i(l)
+
+// Very complex example, basis functions
+// { B_ig as B_i(l) } = \sum_g B_ig TRI(g, l)
+
+// Diffusion
+// d( {B_i as B_i(l)} ) / dt = -\alpha \laplace_l B_i(l)
+
+dB_i(l)/dt = sum_g dB_ig/dt TRI(g,l) = -\alpha \laplace_l sum_g B_ig laplace_l TRI(g,l)
+
+
+pinv(A) = A' inv(A*A')
+pinv(A) = inv(A*A') A'
+
+dB_ig/dt tri_gl = alpha B_ig tri_gl laplace_ll
+
+pinv(tri_lg) = tri_gl inv(tri_lg tri_gl)
+
+
+tri_lg B_g = a T_ll tri_lg B_g
+
+inv(tri_lg tri_gl) tri_gl tri_lg B_g = inv(tri_lg tri_gl) tri_gl T_ll tri_lg B_g
+dB_g/dt = (S_ll)^{-1} T_gg B_g
+
+
 LinkDef Dissolvation <Detritus as i, Detritus as j, Detritus as k>
 {
   parameter rate;

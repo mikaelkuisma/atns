@@ -1,15 +1,21 @@
 classdef SEReference < SEExpression
 properties
-   
+    output
+    
     symbol
     indices
     parameter_type % 0 = normal 1 = indexed 2 = linked
     info
 end
    methods
-       function this = SEReference(symbol, token_ptr)
+       function this = SEReference(symbol, token_ptr, output)
            if nargin > 1
                this.token_ptr = token_ptr;
+           end
+           if nargin > 2
+               this.output = output;
+           else
+               this.output = 0;
            end
            this.symbol = symbol;
            underscores = find(this.symbol == '_');
@@ -37,7 +43,6 @@ end
             value = 0;
         end
 
-       
         function result = evaluate(this, namespace)
             result = namespace.(this.symbol);
         end

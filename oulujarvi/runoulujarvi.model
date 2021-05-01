@@ -1,13 +1,13 @@
 global daylength = 1;
-global stepsperday = 10; 
+global stepsperday = 40; 
 global daysperyear = 90;
-global years = 150;
+global years = 2;
 
 #include "oulujarvi.generated_model";
 
 // 1. Mallin equilibraatio
 // 2. Kalastus catch
-// 3. Kuka syö ja mitä, ja miten paljon? 
+// 3. Kuka sy?? ja mit??, ja miten paljon? 
 // 4. Mallin responssianalyysi
 
 deploy Fishery
@@ -15,7 +15,7 @@ deploy Fishery
   tag WhiFishery = new {};
 };
 
-deploy PerNodeFishing //new period 1999-2013, ajatuksella jos uusimmat on epäluotettavampia, katkaisu aiemmin?
+deploy PerNodeFishing //new period 1999-2013, ajatuksella jos uusimmat on ep??luotettavampia, katkaisu aiemmin?
 {
    startfishing = 50;
    endfishing = 100;
