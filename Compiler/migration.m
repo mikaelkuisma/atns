@@ -22,9 +22,11 @@ fid = fopen(target,'w');
        selectonly = '';
    end
    % Read original .mat data format
-   if ~isfield(Data, 'communityMatrix')
-       Data.communityMatrix = Data.B0 ~= 0;
-   end
+   %if isfield(Data,'adjacencyMatrix')
+   %if ~isfield(Data, 'communityMatrix')
+   %
+   %    Data.communityMatrix = Data.B0 ~= 0;
+   %end
    if isfield(options,'modelfile')
        lines = sprintf('#include "%s";\n', options.modelfile);
    else
@@ -32,7 +34,7 @@ fid = fopen(target,'w');
    end
    fprintf(fid, lines);
    
-   this.communityMatrix = Data.communityMatrix;
+   this.communityMatrix = Data.adjacencyMatrix;
    this.B0 = Data.B0;
    this.d = Data.d;
    this.y = Data.y;
@@ -193,7 +195,7 @@ fid = fopen(target,'w');
      end
      
      
-     conn = full(this.B0>0);
+     conn = full(this.communityMatrix);
      omega = conn ./ repmat(sum(conn,2), 1,size(conn,2));
      omega(find(isnan(omega)))=0;
      
@@ -207,7 +209,7 @@ fid = fopen(target,'w');
              if Data.Guilds(id2).binit <= removebelow
                  continue
              end
-             if this.B0(id1,id2) == 0
+             if this.communityMatrix(id1,id2) == 0
                  continue
              end
          push(sprintf(['  new <%s,%s,%s> { '], Data.Guilds(id1).label, Data.Guilds(id2).label,'POC'));
