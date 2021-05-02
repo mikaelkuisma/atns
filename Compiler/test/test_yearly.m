@@ -1,5 +1,6 @@
-buffer = fileread('yearly.model');
-compiler = Compiler(Parser(Tokenizer(Buffer(buffer))));
+buffer = Buffer(fileread('yearly.model'));
+tokenizer = Tokenizer(buffer);
+compiler = Compiler(Parser(tokenizer));
 compiler.model.repr()
 compiler.compile();
 compiler.disassembler(compiler.get_byte_code());

@@ -1,7 +1,8 @@
 NodeDef Guild index as i
 {
   parameter alpha_i;
-  parameter alphasum += alpha_i;
+  parameter alphasum;
+  alphasum += alpha_i;
   dynamic B_i;
   .B_i = alpha*B_i;
 };

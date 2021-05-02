@@ -263,7 +263,7 @@ end
                 obj.plot();
                 figure(2);
                 others.plot();
-                assert(daydiff < 1e-7);
+                assert(daydiff < 3e-7);
             end
             assert(yeardiff < 1e-7);
         end

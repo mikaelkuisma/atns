@@ -79,6 +79,18 @@ classdef Buffer < handle
             line = reshape(obj.buffer(obj.linestart:lineend-1),1,[]);
         end
         
+        function error_here(obj, msg)
+            range_min = max(obj.ptr-10, 1);
+            range_max = min(obj.ptr+10, numel(obj.buffer));
+            str = obj.buffer(range_min:range_max);
+            str(str==10)=32;
+            str(str==13)=32;
+            msg = [ str newline ...
+                    repmat(' ', 1, obj.ptr-range_min) '^' newline ...
+                    msg newline ];
+            error(msg);
+        end
+
         function error(obj, position, msg, filename)
             %line = obj.get_current_line();
             %obj.linenumber

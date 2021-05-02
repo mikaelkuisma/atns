@@ -1,8 +1,10 @@
-
-dynamic B1 = 1;
-dynamic B2 = 0;
-dynamic B3 = 0;
-dynamic B4 = 0;
+// Begin comment
+dynamic B1 = 1; // Comment here
+//Continuing
+// also
+dynamic B2 = 0;  // dsajdas
+dynamic B3 = 0;  //
+dynamic B4 = 0; 
 .B1 = -B1/15; 
 .B2 = B2/15; 
 .B3 = -B3/25; 

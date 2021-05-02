@@ -153,6 +153,9 @@ classdef Tokenizer < handle
                   pos = [1 1]; 
                 end
             else
+                obj
+                obj.token_file_positions
+                obj.token_ptr
                 pos = obj.token_file_positions{obj.token_ptr};
             end
         end
@@ -199,7 +202,7 @@ classdef Tokenizer < handle
                             if success
                                 obj.push_LITERAL(literal, pos);
                             else
-                                obj.buffer.error(pos, 'Number, operator, string, or literal expected.');
+                                obj.buffer.error_here('Number, operator, string, or literal expected.');
                             end
                         end
                     end

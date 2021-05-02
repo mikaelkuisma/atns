@@ -1,11 +1,11 @@
 NodeDef Guild index as i
 {
-  parameter alpha_i = 1;
+  parameter alpha_i = 0.32;
   dynamic B_i;
   .B_i = alpha*B_i;
 };
 
 deploy Guild
 {
-   tag Prey1 = new { alpha=1; B=0.2; };
+   tag Prey1 = new { alpha=0.35; B=0.2; };
 };

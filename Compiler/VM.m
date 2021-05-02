@@ -1618,7 +1618,7 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                         obj.stack = obj.stack(1:end-data);
                         obj.stack{end+1} = array;
                     case Compiler.VECTOR_SUM
-                        error('TODO');
+                        error('VECTOR_SUM is obsolete.');
                         summands = obj.stack{end};
                         obj.stack{end} = sum(summands);
                     case Compiler.PRINT

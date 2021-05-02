@@ -27,16 +27,12 @@ hold on
 
 t = (0:59);
 [t,y] = ode45(fun, t, B',odeset('RelTol',1e-10,'AbsTol',1e-10));
-plot(t, y,'k');
-for c=1:3
-    max(abs(y(:,c)-data2(c).y'))
-    assert(max(abs(y(:,c)-data2(c).y'))<2);
-end
-
-%xxx
-%deploy Feeding 
-% {
-%  new <Con1, Alg1, Alg1> { e=0.5; q=1.2; B0=1000; d=1; };
-%  new <Con1, Alg2, Alg1> { e=0.5; q=1.2; B0=1000; d=1; };
-% };
-%
+hold off
+plot(t, y,'ko');
+hold on
+plot(data2{1}.data{1}.x, data2{1}.data{1}.y,'rx');
+plot(data2{2}.data{1}.x, data2{2}.data{1}.y,'rx');
+plot(data2{2}.data{2}.x, data2{2}.data{2}.y,'rx');
+assert(max(abs(data2{1}.data{1}.y'-y(:,3)))<2);
+assert(max(abs(data2{2}.data{1}.y'-y(:,1)))<2);
+assert(max(abs(data2{2}.data{2}.y'-y(:,2)))<2);
