@@ -47,6 +47,8 @@ classdef VM < handle & matlab.mixin.CustomDisplay
             end
             if nargin>2
                 obj.optimize_jit = optimize;
+            else
+                obj.optimize_jit = 0;
             end
             obj.year = 0;
             obj.code = code;
@@ -227,7 +229,7 @@ classdef VM < handle & matlab.mixin.CustomDisplay
                 end
             end
         end
-        
+             
         function jit_compile_init(obj, fid)
             context = obj.module_instance;
             for d = 1:numel(context.vmclass.dynamic_names)
@@ -295,7 +297,7 @@ classdef VM < handle & matlab.mixin.CustomDisplay
             %obj.call_by_entry_id(1); % Call module .init
             fname = sprintf('temp_gradient_%d.m', floor(rand(1)*1000000));
             fid = fopen(fname,'w');
-            fprintf(fid, 'function [dBdt] = temp_gradient(B)\n');
+            fprintf(fid, 'function [dBdt] = temp_gradient(B, major)\n');
             obj.jit_compile_init(fid); % Just copy already set up values
             obj.jit_fromarray(fid,'B'); % Rewrite B here
             obj.jit_compile_update(fid);
@@ -750,7 +752,7 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                node = obj.deployed_nodes{node};
                for d=1:numel(node.dynamic)
                    node.dynamic{d} = B(idx); idx = idx+1;
-              end
+               end
                          for x=1:size(node.index_dynamic,1)
                              for y=1:size(node.index_dynamic,2)
                                  node.index_dynamic{x,y} = B(idx); idx = idx +1;
@@ -998,6 +1000,7 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                for minor=1:minor_epochs_per_major_epoch
                   fprintf('year %d day %d \n', major, minor);
                   for iter=1:steps_per_minor_epoch
+                      gradient_debug = [];
                      % OBTAIN B from context
                      for d = 1:ND
                         B{d} = context.dynamic{d};
@@ -1024,9 +1027,11 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                      data(:,iteration) = vertcat( Bflat{:} ); iteration = iteration + 1;
 
                      obj.update();
+                     gradient_debug = [];
                      for d = 1:ND
                          context.dynamic{d} = context.dynamic{d} + context.gradient{d}*dt;
                          B{d} = B{d} + 0.5*context.gradient{d}*dt;
+                         gradient_debug(end+1) = context.gradient{d};
                      end
                      idx = ND+1;
                      for node = 1:numel(obj.deployed_nodes)
@@ -1035,17 +1040,18 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                          for d=1:numel(node.dynamic)
                              B{idx} = B{idx} + 0.5*context.gradient{d}*dt; idx = idx + 1;
                              node.dynamic{d} = node.dynamic{d} + context.gradient{d}*dt; 
+                             gradient_debug(end+1) = context.gradient{d};
                          end
                    
                          for x=1:size(node.index_dynamic,1)
                              for y=1:size(node.index_dynamic,2)
                                  node.index_dynamic{x,y} = B{idx} + node.index_gradient{x,y}*dt;
                                  B{idx} = B{idx} + 0.5*node.index_gradient{x,y}*dt; 
+                                 gradient_debug(end+1) = node.index_gradient{x,y};
                                  idx = idx + 1;
                              end
                          end
                      end
-               
                      obj.update();
                      for d = 1:ND
                          context.dynamic{d} = B{d} + 0.5*context.gradient{d}*dt;
@@ -1397,9 +1403,21 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
             for i=1:200
                 freevars{i} = sprintf('temp%d', 200-i);
             end
+            debug_free_variables = 0;
+            
+            if debug_free_variables
+               numfreevars = numel(freevars);
+            end
             show_opcode=0;
             optimize = obj.optimize_jit;
             while 1
+                if debug_free_variables
+                    fprintf('Freevars %d. Delta freevars %d.\n', numel(freevars), numel(freevars)-numfreevars);
+                    numfreevars = numel(freevars);
+                end
+                if numel(freevars)==0
+                    error('Internal error. Leaking variables.');
+                end
                 %for xxx=1:numel(freevars)
                 %    if ~startsWith(freevars{xxx},'temp')
                 %        asdsa
@@ -1422,8 +1440,8 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                 end
                 if show_opcode
                     fprintf(fid, '%% %04x %s %d\n', obj.ptr, Compiler.get_name_by_opcode(op), data);
+                    fprintf('%% %04x %s %d\n', obj.ptr, Compiler.get_name_by_opcode(op), data);
                 end
-                %fprintf('%% %04x %s %d\n', obj.ptr, Compiler.get_name_by_opcode(op), data);
 
                 context = obj.context_stack{end};
                 switch op
@@ -1569,8 +1587,8 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                             fprintf(fid, '%s = %s + %s;\n', gradname, gradname, tempstack{end});
                             freevars{end+1} = tempstack{end}; tempstack = tempstack(1:end-1); % Pop
                         end
-                        fprintf(fid, 'fprintf(''%%s %%.10f'',%s)\n', gradname,gradname);
-                        fprintf(fid,'pause\n');
+                        %fprintf(fid, 'fprintf(''%%s %%.10f'',%s)\n', gradname,gradname);
+                        %fprintf(fid,'pause\n');
                     case Compiler.DOUBLE_DYNAMIC_COUNT                        
                         error('TODO');
                         %obj.dynamic = cell(1,data); % Allocate dynamic variables

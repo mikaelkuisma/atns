@@ -6,7 +6,6 @@ compiler.compile();
 vm = VM(compiler.get_byte_code(), compiler.model);
 results = vm.jit_solve();
 results.structured_plot();
-xxxsss
 %results.plot();
 [x,data2] = results.get_daily_data();
 %[x,data2] = vm.official_solve().get_daily_data();
