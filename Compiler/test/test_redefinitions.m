@@ -11,7 +11,7 @@ data2 = vm.compare_solve();
     catch e
         e.message
         c = 'AE';
-        assert(startsWith(e.message, ['@000013:Symbol already defined: ' c(d) '.']));
+        assert(contains(e.message,sprintf('Symbol already defined: %s.',c(d))));
     end
 end
 

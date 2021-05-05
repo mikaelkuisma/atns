@@ -87,8 +87,7 @@ end
             elseif this.parameter_type == 1
                     compiler.STORE_INDEXED_GRADIENT_OPCODE(this.dynamic_table_id);
             else
-                this.parameter_type
-                error('internal error');
+                    compiler.STORE_LINK_INDEXED_GRADIENT_OPCODE(this.dynamic_table_id);
             end               
             
        end

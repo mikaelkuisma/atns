@@ -33,7 +33,9 @@ fid = fopen(target,'w');
        lines = [ '#include "LC.mdef";' newline ];
    end
    fprintf(fid, lines);
-   
+   if isfield(Data, 'communityMatrix')
+       Data.adjacencyMatrix = Data.communityMatrix;
+   end
    this.communityMatrix = Data.adjacencyMatrix;
    this.B0 = Data.B0;
    this.d = Data.d;
@@ -230,6 +232,12 @@ push('{\n');
 push('  tag diss = new <POC, DOC, DOC> { rate = 0.1; };\n');
 push('};\n\n');
 
+push('deploy ProducerExudation {\n');
+for i=1:numel(producers)
+    push(sprintf('new <POC, %s, POC> {};\n',producers{i}.label));
+end
+push('};\n');
+
 push('deploy Ageing\n');
 push('{\n');
 for j = 1:numel(namewonumber)
@@ -247,6 +255,8 @@ for j = 1:numel(namewonumber)
     end
 end
 push('};\n');
+
+
      
      fclose(fid);
      return

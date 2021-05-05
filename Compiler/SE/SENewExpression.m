@@ -66,9 +66,16 @@ end
            if iscell(obj.pairdef)
               compiler.NEW_LINK_INDEXED_OPCODE();
               compiler.push_STREAM(obj.indexing_opcode);
+              %obj.super_context.super_context.classes{obj.super_context.class_table_id}.byte_compile_init_indexed(compiler);
+              obj.super_context.byte_compile_init_link_indexed(compiler); % Indexed initializers
+
            else
               compiler.NEW_INDEXED_OPCODE();
               compiler.push_STREAM(Compiler.encode_STRING(obj.mytag));
+              
+              % Compile static assignments at class level
+              %obj.super_context.super_context.classes{obj.super_context.class_table_id}.byte_compile_init_indexed(compiler);
+              
               obj.super_context.byte_compile_init_indexed(compiler); % Indexed initializers
            end
            

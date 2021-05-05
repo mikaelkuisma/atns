@@ -37,6 +37,11 @@ end
            my_class.byte_compile_init_indexed(compiler);
        end
        
+       function byte_compile_init_link_indexed(obj, compiler)
+           my_class = obj.super_context.classes{obj.class_table_id};
+           my_class.byte_compile_init_link_indexed(compiler);
+       end
+       
        function deploy_tag(obj, tag)
            obj.super_context.add_tag(obj.my_id, obj.deploy_index, tag);
        end

@@ -4,6 +4,7 @@ classdef VMNode < VMClass
         
         index_parameter_names
         link_indexed_parameter_names        
+        link_indexed_dynamic_names
         index_dynamic_names
     end
     methods (Access = protected)
@@ -34,6 +35,7 @@ classdef VMNode < VMClass
         function obj = VMNode(name)
             obj@VMClass(name);
             obj.link_indexed_parameter_names = {};
+            obj.link_indexed_dynamic_names = {};
             obj.index_parameter_names = {};
             obj.index_dynamic_names = {};
         end
@@ -49,8 +51,11 @@ classdef VMNode < VMClass
         function push_link_indexed_parameter_name(obj, name)
             obj.link_indexed_parameter_names{end+1} = char(name);
         end
-            
-        
+
+        function push_link_indexed_dynamic_name(obj, name)
+            obj.link_indexed_dynamic_names{end+1} = char(name);
+        end
+       
         function push_index_dynamic_name(obj, name)
             obj.index_dynamic_names{end+1} = char(name);
         end

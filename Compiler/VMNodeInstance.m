@@ -127,6 +127,14 @@ classdef VMNodeInstance < VMInstance
             end
         end
         
+        function value = load_link_indexed_dynamic(obj, position)
+            parameters = obj.link_index_dynamic(obj.current_link_index);
+            value = parameters{position};
+            if isempty(value)
+                error('xxx');
+            end
+        end
+        
         function value = load_indexed_dynamic(obj, position)
             value = obj.index_dynamic{obj.current_index, position};
         end
@@ -138,8 +146,7 @@ classdef VMNodeInstance < VMInstance
         function value = load_indexed_parameter_ref(obj, position)
             value = [ obj.tags{obj.current_index} '_' obj.vmclass.index_parameter_names{position} ];
         end
-        
-        
+               
         function value = load_dynamic_by_idx(obj, idx, position)
             link_data = typecast(obj.current_link_index,'uint8');
             link_data = link_data(idx*2-1:idx*2);
@@ -198,6 +205,10 @@ classdef VMNodeInstance < VMInstance
             value = sprintf('%s_link%d_%s', obj.classname, obj.link_loop_index, obj.vmclass.link_indexed_parameter_names{idx});
         end
         
+        function value = link_indexed_dynamic_ref(obj, idx)
+            value = sprintf('%s_link%d_%s', obj.classname, obj.link_loop_index, obj.vmclass.link_indexed_dynamic_names{idx});
+        end
+        
         
         
        function value = parameter_by_idx_ref(obj, vm, idx, position)
@@ -246,6 +257,8 @@ classdef VMNodeInstance < VMInstance
                     obj.index_gradient{i,j} = 0.0;
                 end
             end
+            
+            % TODO: Link indexed gradients
         end
         
         function store_indexed_dynamic(obj, position, value)

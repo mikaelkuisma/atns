@@ -98,17 +98,28 @@ classdef VM < handle & matlab.mixin.CustomDisplay
             end
             for node = 1:numel(obj.deployed_nodes)
                    node = obj.deployed_nodes{node}; % TODO: Remove same variable name, bad style
+                   % Node spesific dynamic parameters
                    for d=1:numel(node.dynamic)
                       names{end+1} = char(node.vmclass.dynamic_names{d});
                       tags{end+1} = '';
                       classes{end+1} = char(node.vmclass.name);
                    end
+                   % Node index spesific dynamic paramters
                    for x=1:size(node.index_dynamic,1)
                      for y=1:size(node.index_dynamic,2)
                         names{end+1} = char(node.vmclass.index_dynamic_names{y});
                         tags{end+1} = char(node.tags{x});
                         classes{end+1} = char(node.vmclass.name);
                      end
+                   end
+                   % Link Indexed dynamic parameters
+                   for x=1:numel(node.vmclass.link_indexed_dynamic_names)
+                       link_loop_keys = keys(node.link_index_dynamic);
+                       for y=1:numel(link_loop_keys)
+                           names{end+1} = [ char(node.vmclass.link_indexed_dynamic_names{x}) num2str(y)];
+                           tags{end+1} = '';
+                           classes{end+1} = char(node.vmclass.name);
+                       end
                    end
             end
         end
@@ -129,6 +140,16 @@ classdef VM < handle & matlab.mixin.CustomDisplay
                         fprintf(fid, 'd%sdt = 0;\n', value);
                     end
                 end
+                for x=1:numel(node.vmclass.link_indexed_dynamic_names)
+                    node.link_loop(obj);
+                    while 1
+                        fprintf(fid, 'd%sdt = 0;\n', node.link_indexed_dynamic_ref(x));
+                        if ~node.next_link()
+                            break
+                        end
+                    end
+                end
+
             end
             
             
@@ -160,6 +181,15 @@ classdef VM < handle & matlab.mixin.CustomDisplay
                         fprintf(fid, '%s ', value);
                     end
                 end
+                for x=1:numel(node.vmclass.link_indexed_dynamic_names)
+                    node.link_loop(obj);
+                    while 1
+                        fprintf(fid, ' %s ', node.link_indexed_dynamic_ref(x));
+                        if ~node.next_link()
+                            break
+                        end
+                    end
+                end
             end            
             
             fprintf(fid, '];\n');
@@ -184,6 +214,17 @@ classdef VM < handle & matlab.mixin.CustomDisplay
                         idx = idx + 1;
                     end
                 end
+
+                for x=1:numel(node.vmclass.link_indexed_dynamic_names)
+                    node.link_loop(obj);
+                    while 1
+                        fprintf(fid, '%s =%s(%d);\n', node.link_indexed_dynamic_ref(x), target, idx);
+                        idx = idx +1;
+                        if ~node.next_link()
+                            break
+                        end
+                    end
+                end                
             end
             
         end
@@ -207,6 +248,15 @@ classdef VM < handle & matlab.mixin.CustomDisplay
                         fprintf(fid, 'd%sdt ', value);
                     end
                 end
+for x=1:numel(node.vmclass.link_indexed_dynamic_names)
+                    node.link_loop(obj);
+                    while 1
+                        fprintf(fid, ' d%sdt ', node.link_indexed_dynamic_ref(x));
+                        if ~node.next_link()
+                            break
+                        end
+                    end
+                end                
             end
             fprintf(fid, '];\n');
         end
@@ -227,6 +277,18 @@ classdef VM < handle & matlab.mixin.CustomDisplay
                         B(end+1) = node.index_dynamic{x,y};
                     end
                 end
+
+                for x=1:numel(node.vmclass.link_indexed_dynamic_names)
+                    node.link_loop(obj);
+                    while 1
+                        B(end+1) = node.load_link_indexed_dynamic(x);
+                        %fprintf(fid, '%s =%s(%d);\n', node.link_indexed_dynamic_ref(x), target, idx);
+                        %idx = idx +1;
+                        if ~node.next_link()
+                            break
+                        end
+                    end
+                end                                
             end
         end
              
@@ -234,32 +296,39 @@ classdef VM < handle & matlab.mixin.CustomDisplay
             context = obj.module_instance;
             for d = 1:numel(context.vmclass.dynamic_names)
                 fprintf(fid, '%s_%s = %.16f;\n', context.classname, context.vmclass.dynamic_names{d}, context.dynamic{d});
+                fprintf('%s_%s = %.16f;\n', context.classname, context.vmclass.dynamic_names{d}, context.dynamic{d});
             end
             for d = 1:numel(context.parameter)
                 if ~isempty(context.parameter{d})
                 fprintf(fid, '%s_%s = %.16f;\n', context.classname, context.vmclass.parameter_names{d}, context.parameter{d});
+                assert(numel(context.parameter{d})==1);
+                fprintf('%s_%s = %.16f;\n', context.classname, context.vmclass.parameter_names{d}, context.parameter{d});
                 end
             end            
             for node = 1:numel(obj.deployed_nodes)
                 node = obj.deployed_nodes{node};
                 for d=1:numel(node.dynamic)
                     fprintf(fid, '%s_%s = %.16f;\n', node.classname, node.vmclass.dynamic_names{d}, node.dynamic{d});
+                    fprintf('%s_%s = %.16f;\n', node.classname, node.vmclass.dynamic_names{d}, node.dynamic{d});
                 end
                 for d=1:numel(node.parameter)
                     if ~isempty(node.parameter{d})
                     fprintf(fid, '%s_%s = %.16f;\n', node.classname, node.vmclass.parameter_names{d}, node.parameter{d});
+                    fprintf('%s_%s = %.16f;\n', node.classname, node.vmclass.parameter_names{d}, node.parameter{d});
                     end
                 end
                 for x=1:size(node.index_dynamic,1)
                     for y=1:size(node.index_dynamic,2)
                         value = [ node.tags{x} '_' node.vmclass.index_dynamic_names{y} ];
                         fprintf(fid, '%s = %.16f;\n', value, node.index_dynamic{x,y});
+                        fprintf('%s = %.16f;\n', value, node.index_dynamic{x,y});
                     end
                 end
                 for x=1:size(node.index_parameter,1)
                     for y=1:size(node.index_parameter,2)
                         value = [ node.tags{x} '_' node.vmclass.index_parameter_names{y} ];
                         fprintf(fid, '%s = %.16f;\n', value, node.index_parameter{x,y});
+                        fprintf('%s = %.16f;\n', value, node.index_parameter{x,y});
                     end
                 end
                 linkindexkeys = keys(node.link_index_parameter);
@@ -270,13 +339,22 @@ classdef VM < handle & matlab.mixin.CustomDisplay
                         varname = sprintf('%s_link%d_%s', node.classname, x, node.vmclass.link_indexed_parameter_names{y});
                         val = value{y};
                         fprintf(fid, '%s = %.16f;\n', varname, val);
+                        fprintf('%s = %.16f;\n', varname, val);
                     end
                 end
-                %for x = 
-                %    x
-                %    pause
-                %end
                 
+                linkindexkeys = keys(node.link_index_dynamic);
+                for x = 1:numel(linkindexkeys);
+                    key = linkindexkeys{x};
+                    value = node.link_index_dynamic(key);
+                    for y = 1:numel(value)
+                        varname = sprintf('%s_link%d_%s', node.classname, x, node.vmclass.link_indexed_dynamic_names{y});
+                        val = value{y};
+                        fprintf(fid, '%s = %.16f;\n', varname, val);
+                        fprintf('%s = %.16f;\n', varname, val);
+                    end
+                end
+               
             end
             
         end
@@ -303,7 +381,6 @@ classdef VM < handle & matlab.mixin.CustomDisplay
             obj.jit_compile_update(fid);
             obj.jit_compile_update(fid);
             obj.jit_compile_flatgrad(fid,'B');
-            obj.jit_compile_flatgrad(fid,'B');
 
             fclose(fid);
             gradfun = str2func(fname(1:end-2));
@@ -311,7 +388,7 @@ classdef VM < handle & matlab.mixin.CustomDisplay
         
         function yearfun = jit_year_function(obj)
             fid = fopen('temp_year.m','w');
-            fprintf(fid, 'function dBdt = temp_year(B)\n');
+            fprintf(fid, 'function dBdt = temp_year(B, major)\n');
             obj.jit_compile_init(fid); % Just copy already set up values
             obj.jit_fromarray(fid, 'B');
             obj.jit_compile_update_yearly(fid);
@@ -332,12 +409,12 @@ classdef VM < handle & matlab.mixin.CustomDisplay
         
         function J = jacobian(obj, B, gradfun)
             J = [];
-            dfdB0 = gradfun(B);
+            dfdB0 = gradfun(B,0);
             dB = 1e-5;
             for i=1:numel(B)
                 B1 = B;
                 B1(i) = B1(i) + dB;
-                dfdB1 = gradfun(B1);
+                dfdB1 = gradfun(B1,0);
                 J = [ J ; (dfdB1-dfdB0)/dB ];
             end                
         end
@@ -399,6 +476,7 @@ classdef VM < handle & matlab.mixin.CustomDisplay
                steps_per_minor_epoch = parameterset.steps_per_minor_epoch; 
                minor_epochs_per_major_epoch = parameterset.minor_epochs_per_major_epoch;
                major_epochs = parameterset.major_epochs;
+               major_epochs = 20;
             
                dt = minor_epoch_length / steps_per_minor_epoch;            
             gradfun = obj.jit_gradient_function();
@@ -431,17 +509,21 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                %    caxis([-0.1 0.1]);
                %    colormap(colorMap);
                %end
-               figure(3);
-               for dof=1:min(44,numel(Bref))
+               if 0
+                   figure(3);
+               for dof=1:numel(Bref)
                    subplot(11,4,dof);
                    imagesc(squeeze(alldata(dof,:, :)));
                    caxis([-0.1 0.1]);
                    colormap(colorMap);
                end
+               end
                
-               figure(2);                           
+               f=figure(2);                           
+               f = figure;  
+               f.Position = [10 10 1200 1200]; 
                            
-            for dof = 1:min(44,numel(Bref))
+            for dof = 1:numel(Bref)
 
                Bref2 = Bref;
                Bref2(dof) = Bref2(dof) + 1e-5;
@@ -468,15 +550,15 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                          end
                      end
                      for i=1:numel(B)
-                         dBdt = gradfun(B{i});
-                         dBdt2 = gradfun(B{i} + dBdt*dt);
+                         dBdt = gradfun(B{i},0);
+                         dBdt2 = gradfun(B{i} + dBdt*dt,0);
                          B{i} = B{i} + (dBdt+dBdt2)*dt/2;
                      end
                   end % intraday steps
                end % minor
                
                for i=1:numel(B)
-               B{i} = B{i} + yearfun(B{i});
+               B{i} = B{i} + yearfun(B{i},0);
                end
                
                %obj.update_yearly();
@@ -535,13 +617,13 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                end
                set(gca,'xtick',tickpos);
                set(gca,'xticklabel',ticknames);
-               set(gca,'ytick',1:44);
+               set(gca,'ytick',1:86);
                for i=1:numel(results.tags)
                    labels{i} = [ results.tags{i} '.' results.names{i} ];
                end
                set(gca,'yticklabel', labels);
                title([ results.tags{dof} '.' results.names{dof} ]);
-               caxis([-0.05 0.05]);
+               caxis([-0.15 0.15]);
               
                colormap(colorMap);
                set(gcf,'PaperUnits','inches','PaperPosition',[0 0 10 8])
@@ -669,7 +751,7 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
             
             %obj.load(); % Deploys objects in module
             %obj.call_by_entry_id(1); % Call module .init
-            if obj.initialized
+            if ~obj.initialized
                 obj.initialize();
             end
 
@@ -740,6 +822,7 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
             obj.jit_compile_update(fid);
             fprintf(fid, 'end\n');
             fclose(fid);
+            pause(0.5);
             calculation = str2func(fname(1:end-2));
             results = calculation(parameterset, results);
             B = results.get_last_B();
@@ -1052,6 +1135,8 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                              end
                          end
                      end
+                     %save('official_solve_grad.mat','gradient_debug');
+                     %asds
                      obj.update();
                      for d = 1:ND
                          context.dynamic{d} = B{d} + 0.5*context.gradient{d}*dt;
@@ -1422,8 +1507,6 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                 %    if ~startsWith(freevars{xxx},'temp')
                 %        asdsa
                 %end
-                %tempstack
-                %freevars
                 ip_start = obj.ptr;
                 op = obj.code(obj.ptr); obj.ptr = obj.ptr + 1;
                 parameter_size = Compiler.PAR_COUNTS(op+1);
@@ -1757,8 +1840,6 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                                 end
                             case Compiler.BUILTIN_SWITCH
                                 fprintf(fid, 'if %s < 0\n', string(tempstack{end-2}));
-                                freevars
-                                tempstack
                                 fprintf(fid, '  %s = %s;\n', freevars{end}, char(string(tempstack{end-1})));
                                 fprintf(fid, 'else\n');
                                 fprintf(fid, '  %s = %s;\n', freevars{end}, char(string(tempstack{end})));
@@ -2008,7 +2089,10 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                         tempstack = tempstack(1:end-1);
                     case Compiler.STORE_PARAMETER_BY_IDX_1
                         fprintf(fid, '%s = %s;\n', context.parameter_by_idx_ref(obj, 1,data), char(string(tempstack{end})));
+                        fprintf('%s = %s;\n', context.parameter_by_idx_ref(obj, 1,data), char(string(tempstack{end})));
                         % pop
+                        %tempstack
+                        %pause(0.01);
                         if ~optimize | startsWith(char(string(tempstack{end})),'temp'),freevars{end+1} = tempstack{end};end
                         tempstack = tempstack(1:end-1);
                     case Compiler.STORE_PARAMETER_BY_IDX_2
@@ -2026,6 +2110,10 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                         end
                     case Compiler.STORE_LINK_INDEXED_PARAMETER
                         fprintf(fid, '%s = %s;\n', context.link_indexed_parameter_ref(data), char(string(tempstack{end})));
+                        if ~optimize | startsWith(char(string(tempstack{end})),'temp'),freevars{end+1} = tempstack{end};end
+                        tempstack = tempstack(1:end-1); 
+                    case Compiler.STORE_LINK_INDEXED_GRADIENT
+                        fprintf(fid, 'd%sdt = d%sdt + %s;\n', context.link_indexed_dynamic_ref(data), context.link_indexed_dynamic_ref(data), char(string(tempstack{end})));
                         if ~optimize | startsWith(char(string(tempstack{end})),'temp'),freevars{end+1} = tempstack{end};end
                         tempstack = tempstack(1:end-1); 
                     case Compiler.LOAD_LINK_INDEXED_PARAMETER
@@ -2067,6 +2155,7 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
             index_dynamic_names_remaining = 0;
             dynamic_names_remaining = 0;
             link_indexed_parameter_names_remaining = 0;
+            link_indexed_dynamic_names_remaining = 0;
             tags_remaining = 0;
             current_class = [];
             stepping = 0;
@@ -2252,7 +2341,14 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                             else
                                 error('Expected to be within node definition.');
                             end
-                            link_indexed_parameter_names_remaining = link_indexed_parameter_names_remaining-1;                            
+                            link_indexed_parameter_names_remaining = link_indexed_parameter_names_remaining-1;
+                        elseif link_indexed_dynamic_names_remaining > 0
+                            if ~isempty(current_class)
+                                current_class.push_link_indexed_dynamic_name(s);
+                            else
+                                error('Expected to be within node definition.');
+                            end
+                            link_indexed_dynamic_names_remaining = link_indexed_dynamic_names_remaining-1;
                         elseif index_dynamic_names_remaining > 0
                             if ~isempty(current_class)
                                 current_class.push_index_dynamic_name(s);
@@ -2451,6 +2547,8 @@ colorMap = [redColorMap; greenColorMap; zeros(1, 256)]';
                         end
                     case Compiler.DOUBLE_LINK_INDEXED_PARAMETER_COUNT
                         link_indexed_parameter_names_remaining = data;
+                    case Compiler.DOUBLE_LINK_INDEXED_DYNAMIC_COUNT
+                        link_indexed_dynamic_names_remaining = data;
                     case Compiler.STORE_GRADIENT_BY_IDX_1
                         context.store_gradient_by_idx(1,data,obj.stack{end});
                         obj.stack = obj.stack(1:end-1);

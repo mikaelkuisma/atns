@@ -33,6 +33,10 @@ classdef Compiler < handle
         BUILTIN_FUNCTION = 0x80;
         DUPLICATE_STACK = 0x81;
         
+        DOUBLE_LINK_INDEXED_DYNAMIC_COUNT = 0x82; % int32 parameter
+        STORE_LINK_INDEXED_GRADIENT = 0x83; % int32 parameter
+        
+        
         ENCODE_STRING = 0x9F;
 
         STORE_GRADIENT_BY_IDX_1 = 0xC0;
@@ -117,7 +121,7 @@ classdef Compiler < handle
                        2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ... % 50..5F
                        0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ... % 60..6F
                        1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ... % 70..7F
-                       2 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ... % 80..8F
+                       2 2 4 4 0 0 0 0 0 0 0 0 0 0 0 0 ... % 80..8F
                        0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 ... % 90..9F
                        0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ... % A0..AF
                        0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ... % B0..BF
@@ -260,6 +264,8 @@ classdef Compiler < handle
                         name = 'DOUBLE_INDEX_DYNAMIC_COUNT';
                     case Compiler.DOUBLE_INDEX_PARAMETER_COUNT
                         name = 'DOUBLE_INDEX_PARAMETER_COUNT';
+                    case Compiler.DOUBLE_INDEX_DYNAMIC_COUNT
+                        name = 'DOUBLE_INDEX_DYNAMIC_COUNT';
                     case Compiler.CREATE_NODEDEF
                         name = 'CREATE_NODEDEF';
                     case Compiler.DEPLOY
@@ -276,6 +282,8 @@ classdef Compiler < handle
                         name = 'STORE_INDEXED_DYNAMIC';
                     case Compiler.STORE_INDEXED_GRADIENT
                         name = 'STORE_INDEXED_GRADIENT';
+                    case Compiler.STORE_LINK_INDEXED_GRADIENT
+                        name = 'STORE_LINK_INDEXED_GRADIENT';
                     case Compiler.END_DEPLOY
                         name = 'END_DEPLOY';
                     case Compiler.INDEX_LOOP
@@ -292,6 +300,8 @@ classdef Compiler < handle
                         name = 'SUM_LOOP';
                     case Compiler.DOUBLE_LINK_INDEXED_PARAMETER_COUNT
                         name = 'DOUBLE_LINK_INDEXED_PARAMETER_COUNT';
+                    case Compiler.DOUBLE_LINK_INDEXED_DYNAMIC_COUNT
+                        name = 'DOUBLE_LINK_INDEXED_DYNAMIC_COUNT';
                     case Compiler.STORE_GRADIENT_BY_IDX_1
                         name = 'STORE_GRADIENT_BY_IDX_1';
                     case Compiler.STORE_GRADIENT_BY_IDX_2
@@ -328,8 +338,6 @@ classdef Compiler < handle
                         name = 'LINK_JUMP';
                     case Compiler.STORE_LINK_INDEXED_PARAMETER
                         name = 'STORE_LINK_INDEXED_PARAMETER';
-                    case Compiler.LOAD_LINK_INDEXED_PARAMETER
-                        name = 'LOAD_LINK_INDEXED_PARAMETER';
                     case Compiler.LINK_LOOP
                         name = 'LINK_LOOP';
                     case Compiler.STORE_LINK_INDEXED_DYNAMIC
@@ -654,7 +662,7 @@ classdef Compiler < handle
               obj.model.byte_compile(obj);
            catch e
                if e.message(1) == '@'
-                   %rethrow(e);
+                   rethrow(e);
                    token_ptr = str2num(e.message(2:7));
                    obj.parser.tokenizer.error_at_token(token_ptr, e.message(9:end));
                else
@@ -717,6 +725,10 @@ classdef Compiler < handle
         function STORE_INDEXED_DYNAMIC_OPCODE(obj, idx)
             obj.OPCODE(Compiler.STORE_INDEXED_DYNAMIC, uint32(idx));
         end        
+        
+        function STORE_LINK_INDEXED_DYNAMIC_OPCODE(obj, idx)
+            obj.OPCODE(Compiler.STORE_LINK_INDEXED_DYNAMIC, uint32(idx));
+        end           
         
         function CALL_ENTRY_OPCODE(obj, idx)
             obj.OPCODE(Compiler.CALL_ENTRY, uint32(idx));
@@ -859,6 +871,10 @@ classdef Compiler < handle
             obj.OPCODE(Compiler.STORE_INDEXED_GRADIENT, uint32(idx));
         end
         
+        function STORE_LINK_INDEXED_GRADIENT_OPCODE(obj, idx)
+            obj.OPCODE(Compiler.STORE_LINK_INDEXED_GRADIENT, uint32(idx));
+        end
+        
         function LOAD_DYNAMIC_OPCODE(obj, idx)
             obj.OPCODE(Compiler.LOAD_DYNAMIC, idx);
         end
@@ -909,6 +925,10 @@ classdef Compiler < handle
         
         function LINK_INDEXED_PARAMETER_COUNT_OPCODE(obj, length)
             obj.OPCODE(Compiler.DOUBLE_LINK_INDEXED_PARAMETER_COUNT, length); % TODO: Names not matching
+        end
+        
+        function LINK_INDEXED_DYNAMIC_COUNT_OPCODE(obj, length)
+            obj.OPCODE(Compiler.DOUBLE_LINK_INDEXED_DYNAMIC_COUNT, length); % TODO: Names not matching
         end
 
         function ENTRY_COUNT_OPCODE(obj, length)

@@ -72,6 +72,12 @@ end
            end
        end
        
+       function byte_compile_init_link_indexed(obj, compiler)
+           for i = 1:numel(obj.exprs)
+               obj.exprs{i}.byte_compile_init_link_indexed(compiler);
+           end
+       end       
+       
        
        function byte_compile_update(obj, compiler)
            for i = 1:numel(obj.exprs)

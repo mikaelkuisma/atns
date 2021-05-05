@@ -112,11 +112,33 @@ classdef SEAssign < SEExpression & Context
                       obj.lhs.byte_compile_assign_to(compiler,[]);
                       %compiler.LINK_JUMP_OPCODE(loop_ptr);   
                  else
-                      obj.rhs.byte_compile(compiler);
-                      obj.lhs.byte_compile_assign_to(compiler,[]);
+                     %xxxx
                   end
             end
        end
+       
+       
+       function byte_compile_init_link_indexed(obj, compiler)
+            if obj.lhs.is_gradient()
+                return
+            end
+            if ~isempty(obj.rhs) && ~obj.rhs.is_constant()
+                return
+            end
+            if obj.lhs.parameter_type >= 1
+                 if isempty(obj.rhs)
+                      %compiler.LINK_LOOP_OPCODE();
+                      %loop_ptr = compiler.push_PTR_TO_BE_BACKFILLED();
+                      obj.zero_constant.byte_compile(compiler);
+                      obj.lhs.byte_compile_assign_to(compiler,[]);
+                      %compiler.LINK_JUMP_OPCODE(loop_ptr);   
+                 else
+                     obj.rhs.byte_compile(compiler);
+                     obj.lhs.byte_compile_assign_to(compiler,[]);
+                 end
+            end
+       end
+       
        
        
        function byte_compile_init(obj, compiler)
@@ -141,7 +163,12 @@ classdef SEAssign < SEExpression & Context
                   obj.rhs.byte_compile(compiler);
                   obj.lhs.byte_compile_assign_to(compiler, obj.params);
                   else
-                      % Init does not handle indexed parameters
+                      % On purpose empty
+                      %compiler.LINK_LOOP_OPCODE();
+                      %loop_ptr = compiler.push_PTR_TO_BE_BACKFILLED();
+                      %obj.rhs.byte_compile(compiler);
+                      %obj.lhs.byte_compile_assign_to(compiler, obj.params);
+                      %compiler.LINK_JUMP_OPCODE(loop_ptr);   
                   end
               end
            end
@@ -284,12 +311,12 @@ classdef SEAssign < SEExpression & Context
                     compiler.INDEX_JUMP_OPCODE(loop_ptr);
                  end
              elseif obj.lhs.parameter_type == 2
-                error('Link gradients not supported.');
-                %compiler.LINK_LOOP_OPCODE();
-                %loop_ptr = compiler.push_PTR_TO_BE_BACKFILLED();
-                %obj.rhs.byte_compile(compiler);
-                %obj.lhs.byte_compile_assign_to(compiler);
-                %compiler.LINK_JUMP_OPCODE(loop_ptr);        
+                %error('Link gradients not supported.');
+                compiler.LINK_LOOP_OPCODE();
+                loop_ptr = compiler.push_PTR_TO_BE_BACKFILLED();
+                obj.rhs.byte_compile(compiler);
+                obj.lhs.byte_compile_assign_to(compiler,[]);
+                compiler.LINK_JUMP_OPCODE(loop_ptr);        
              else
                  error('internal error.');
              end

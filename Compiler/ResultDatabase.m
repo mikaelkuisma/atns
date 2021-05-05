@@ -104,7 +104,36 @@ end
                 legend(names);
                 title(plotdata{plotid}.layout.title);
             end
-        end        
+       end        
+
+       function structured_plot_all_guilds(obj,color, clear, range)
+            plotdata = obj.get_struct_age_groups();
+            idx = 0;
+            for plotid = 1:numel(plotdata)
+                hold on
+                names = {};
+                traces = plotdata{plotid}.data;
+                for trace = 1:numel(traces)
+                    trace = traces{trace};
+                    idx = idx + 1;
+                    figure(idx);
+                    if clear
+                        clf
+                    else
+                        hold on
+                    end
+                    plot(trace.x(1:90:end)/90, trace.y(1:90:end),color);
+                    %names{end+1} = trace.name;
+                    xlim(range);
+                    legend({ [ trace.name ' old'], [ trace.name ' new'],[ trace.name ' no Ppe']});
+                    title(plotdata{plotid}.layout.title);
+                    print('-dpng',sprintf('%s_%s.png',plotdata{plotid}.layout.title,trace.name));
+                end
+                
+            end
+       end        
+        
+
         
         function plotdata = get_struct(obj)
             plotdata = {};

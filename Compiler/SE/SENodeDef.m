@@ -12,6 +12,7 @@ classdef SENodeDef < SEClassDef
         link_classes % Contexts for resolving link indices
         
         link_indexed_parameter_names
+        link_indexed_dynamic_names
         
         index_to_id
     end
@@ -100,6 +101,13 @@ classdef SENodeDef < SEClassDef
             end
         end
         
+        function add_link_indexed_dynamic(obj, lhs)
+            obj.link_indexed_dynamic_names{end+1} = lhs;
+            if ~obj.symboltable.has_symbol(lhs)
+                obj.symboltable.push(lhs, SEGeneralModel.LINK_INDEXED_DYNAMIC_TABLE, 1); % By default, for now, size is always 1
+            end
+        end
+        
         function add_indexed_dynamic(obj, lhs)
             if ~obj.symboltable.has_symbol(lhs)
                 obj.symboltable.push(lhs, SEGeneralModel.INDEXED_DYNAMIC_TABLE, 1); % By default, for now, size is always 1
@@ -113,6 +121,13 @@ classdef SENodeDef < SEClassDef
             for i=1:count
                 compiler.push_STREAM(Compiler.encode_STRING(obj.get_indexed_dynamic_name_by_id(i)));
             end
+        end
+        
+        function byte_compile_init_link_indexed(obj, compiler)
+            if ~isempty(obj.super_class)
+               obj.super_class.byte_compile_init_link_indexed(compiler);
+            end
+            obj.statements.byte_compile_init_link_indexed(compiler);
         end
         
         function byte_compile_init_indexed(obj, compiler)
@@ -217,7 +232,13 @@ classdef SENodeDef < SEClassDef
             for i=1:count
                 compiler.push_STREAM(Compiler.encode_STRING(obj.link_indexed_parameter_names{i}));
             end
-            
+
+            count = numel(obj.link_indexed_dynamic_names);
+            compiler.LINK_INDEXED_DYNAMIC_COUNT_OPCODE(count);
+            for i=1:count
+                compiler.push_STREAM(Compiler.encode_STRING(obj.link_indexed_dynamic_names{i}));
+            end
+
         end
         
         function info = get_info_by_name(obj, symbol)
@@ -326,8 +347,8 @@ classdef SENodeDef < SEClassDef
                     id{2} = info{2};
                     return
                 end
-                if ~strcmp(info{1},'B_i')
-                    error(sprintf('Expected indexed dynamic variable for symbol %s.',symbol));
+                if ~strcmp(info{1},'B_ij')
+                    error(sprintf('Expected link indexed dynamic variable for symbol %s.',symbol));
                 end
                 id = info{2};
                 return
