@@ -1,0 +1,41 @@
+global daylength = 1;
+global stepsperday = 10; 
+global daysperyear = 90;
+global years = 200;
+
+#include "new_simplified_oulujarvi.generated_model";
+
+// 1. Mallin equilibraatio
+// 2. Kalastus catch
+// 3. Kuka syö ja mitä, ja miten paljon? 
+// 4. Mallin responssianalyysi
+
+deploy Fishery
+{
+  tag WhiFishery = new {};
+};
+
+deploy PerNodeFishing //new period 2013-2017 F:s updated these new ones for perch invented, similarly must invent for pike & brown trout
+// for pike age coming to fishery probably similar to pikeperch could be. for brown trout from first age already lake ages
+{
+   startfishing = 250;
+   endfishing = 260;
+  
+   new <Whi2, WhiFishery, POC> { intensity = 0.3; };
+   new <Whi3, WhiFishery, POC> { intensity = 1.0; };
+   new <Whi4, WhiFishery, POC> { intensity = 1.1; };
+   new <Sme1, WhiFishery, POC> { intensity = 0.1; };
+   new <Sme2, WhiFishery, POC> { intensity = 0.7; };
+   new <Sme3, WhiFishery, POC> { intensity = 1.3; };
+   new <Sme4, WhiFishery, POC> { intensity = 3.6; };
+   new <Ven1, WhiFishery, POC> { intensity = 0.9; };
+   new <Ven2, WhiFishery, POC> { intensity = 1.9; };
+   new <Ven3, WhiFishery, POC> { intensity = 7.0; };
+   new <Ven4, WhiFishery, POC> { intensity = 4.4; };
+   new <Ppe5, WhiFishery, POC> { intensity = 0.1; };
+   new <Ppe6, WhiFishery, POC> { intensity = 0.7; };
+   new <Per1, WhiFishery, POC> { intensity = 0.2; };
+   new <Per2, WhiFishery, POC> { intensity = 0.2; };
+   new <Per3, WhiFishery, POC> { intensity = 0.5; };
+   new <Per4, WhiFishery, POC> { intensity = 0.5; };
+};

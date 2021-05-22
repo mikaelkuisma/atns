@@ -1,4 +1,5 @@
-%buffer = fileread('LC_no_yearly.model');
+if 0
+    %buffer = fileread('LC_no_yearly.model');
 buffer = fileread('LC.model');
 compiler = Compiler(Parser(Tokenizer(Buffer(buffer))));
 compiler.model.repr()
@@ -63,3 +64,4 @@ end
 %hold on
 %end
 
+end

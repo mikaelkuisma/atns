@@ -7,15 +7,15 @@ global years = 2;
 
 // 1. Mallin equilibraatio
 // 2. Kalastus catch
-// 3. Kuka sy?? ja mit??, ja miten paljon? 
+// 3. Kuka syo ja miten, ja miten paljon? 
 // 4. Mallin responssianalyysi
 
-deploy Fishery
+disabled deploy Fishery
 {
   tag WhiFishery = new {};
 };
 
-deploy PerNodeFishing //new period 1999-2013, ajatuksella jos uusimmat on ep??luotettavampia, katkaisu aiemmin?
+disabled deploy PerNodeFishing //new period 1999-2013, ajatuksella jos uusimmat on ep??luotettavampia, katkaisu aiemmin?
 {
    startfishing = 50;
    endfishing = 100;

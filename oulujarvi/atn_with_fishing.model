@@ -37,7 +37,7 @@ NodeDef Consumer index as i inherits Guild
 
 LinkDef Feeding <Consumer as i, Guild as j, Detritus as k>
 {
-   //1dynamic totaleaten_ij=0;
+   //dynamic totaleaten_ij=0;
    parameter e_ij;
    parameter q_ij;
    parameter B0_ij;
@@ -48,8 +48,9 @@ LinkDef Feeding <Consumer as i, Guild as j, Detritus as k>
    parameter F_ij = w_ij*(B_j^q_ij) / ( B0_ij^q_ij + effectiveprey_i + d_ij * (B0_ij^q_ij)*B_i);
    parameter feedingrate_ij = mbr_i * y_ij * F_ij * B_i;
    //parameter feedingrate_ij = mbr_i * y_ij * B_i;
+   //@PRINT(feedingrate_ij*fa_i);
    consumptiongains_i += fa_i * feedingrate_ij;
-   //.totaleaten_ij = §_ij / e_ij;
+   //.totaleaten_ij = feedingrate_ij / e_ij;
    
    .B_i = fa_i * feedingrate_ij;
    .B_j = -feedingrate_ij / e_ij;
@@ -84,8 +85,10 @@ NodeDef Fish index as i inherits Consumer
     parameter R1_i = 0.5 * consumptiongains_i^2 / maintenancelosses_i;
     parameter R2_i = 0.5 * (2 * consumptiongains_i - maintenancelosses_i);
     parameter gonadgain_i = invest_i*Pmat_i*@SWITCH(consumptiongains_i-maintenancelosses_i, R1_i, R2_i);
+    //parameter gonadgain_i = invest_i*Pmat_i*R2_i;
     parameter fishinglosses_i;
-    .gonads_i = gonadgain_i;
+    parameter gonadfishinglosses_i;
+    .gonads_i = gonadgain_i - gonadfishinglosses_i;
     .B_i = -gonadgain_i - fishinglosses_i;
     #B_i = hatchery_i;
 };
@@ -109,7 +112,9 @@ LinkDef PerNodeFishing <Fish as i, Fishery as j, Detritus as k>
    parameter F = @SWITCH(@T()-startfishing, 0, @SWITCH(@T()-endfishing, 1, 0));
    parameter intensity_ij;
    parameter fishrate_ij = F*intensity_ij*B_i/90;
+   parameter gonadfishrate_ij = F*intensity_ij*gonads_i/90;
    fishinglosses_i += fishrate_ij;
+   gonadfishinglosses_i += gonadfishrate_ij;
    catch_j += fishrate_ij; 
 };
 

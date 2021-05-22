@@ -428,6 +428,15 @@ deploy Feeding
   tag diss = new <POC, DOC, DOC> { rate = 0.1; };
 };
 
+deploy ProducerExudation {
+new <POC, Alg1A, POC> {};
+new <POC, Alg1B, POC> {};
+new <POC, Alg2, POC> {};
+new <POC, Alg3, POC> {};
+new <POC, Alg4, POC> {};
+new <POC, Alg5, POC> {};
+new <POC, APP, POC> {};
+};
 deploy Ageing
 {
  new <Brt0, Brt1, POC> {};
