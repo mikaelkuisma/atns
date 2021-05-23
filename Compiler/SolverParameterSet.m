@@ -3,7 +3,8 @@ classdef SolverParameterSet < handle
         OPTIONAL_PARAMETERS = {'steps_per_day', 'day_length', ...
                                'days_per_year', 'years', ...
                                'day_name','year_name'};
-        OPTIONAL_DEFAULT_VALUES = { 3, 1.0, 20, 3, 'day','year'};
+%        OPTIONAL_DEFAULT_VALUES = { 3, 1.0, 20, 3, 'day','year'};
+        OPTIONAL_DEFAULT_VALUES = { 10, 1.0, 90, 3, 'day','year'};
         COMPULSORY_PARAMETERS = {};
     end        
     properties

@@ -1,15 +1,49 @@
-%buffers = { 'B=3;alpha=2;.B=alpha*B;' };
-buffers = { 'parameter alpha=1;parameter beta=1;parameter gamma=1;dynamic B1=2/3;dynamic B2=1/2;.B1=alpha*B1-gamma*B1*B2;.B2=-beta*B2+gamma*B1*B2;' };
+% Store old path, to restore it after the test
+current_path = cd;
 
-results = [];
-namespace = Namespace();
+% Path to this file
+[filepath,name,ext] = fileparts(mfilename('fullpath'));
 
-for i=1:numel(buffers)
-compiler = Compiler(Parser(Tokenizer(Buffer(buffers{i}))));
-compiler.compile();
-code = compiler.get_byte_code();
-Compiler.disassembler(code);
-fprintf('0x%02x, ',code(0xd2:end));
-vm = VM(compiler.get_byte_code(), compiler.model);
-data = vm.compare_solve();
-end
+% Path to LakeConstance mat-model
+mat_model = fullfile(filepath, 'old\Data\1_LakeConstance.mat');
+
+% Go to test directory
+cd(filepath);
+
+migration(mat_model, 'test_lake_constance.generated_model','modelfile','test_lake_constance.model');
+results_new = atnsf('test_lake_constance.generated_model',1,'new','years', 30, 'steps_per_day',10).Bminor;
+
+results_new = results_new([1 2 3:22 23:2:42],:);
+clf
+semilogy(results_new','r','linewidth',2);
+hold on
+
+
+cd(fullfile(filepath, 'old'));
+
+results = test_suite_old_run(mat_model, odeset('RelTol',1e-9,'AbsTol',1e-10));
+old_results = reshape(results.allbiomasses, size(results.allbiomasses,1), 91, 30);
+old_results = reshape(old_results(:,1:90,:), size(results.allbiomasses,1), 90*30);
+semilogy(old_results','b--','linewidth',2);
+
+x0=10;
+y0=10;
+width=1500;
+height=1000
+set(gcf,'position',[x0,y0,width,height])
+set(gca,'Fontsize',22);
+ylabel('Biomass [\muC/m^3]','Fontsize',22);
+xlabel('Day','Fontsize',22);
+print -dpng lake_constance_oldnew.png
+
+cd(current_path);
+
+deviation = results_new(:,1:2700)-old_results(:,1:2700);
+clf
+semilogy((abs(deviation) ./ results_new(:,1:2700))','r','Linewidth',2);
+ylabel('Relative deviation','Fontsize',22);
+xlabel('Day','Fontsize',22);
+ylim([1e-7 1e-2]);
+set(gca,'Fontsize',22);
+print -dpng lake_constance_deviation.png
+assert(std(deviation(:))<1.1);

@@ -207,7 +207,7 @@ classdef Parser < handle
                 validref.token_ptr = obj.tokenizer.token_ptr;
                 success = true;
             else
-                obj.pop_ptr();
+                obj.tokenizer.pop_ptr();
                 validref = [];
                 success = false;
             end

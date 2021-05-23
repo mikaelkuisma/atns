@@ -256,6 +256,12 @@ for j = 1:numel(namewonumber)
 end
 push('};\n');
 
+     
+push('deploy ResetDetritus\n');
+push('{\n');
+push('  new <DOC,DOC,DOC> {};');
+push('};\n');
+
 
      
      fclose(fid);

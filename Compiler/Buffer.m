@@ -26,7 +26,7 @@ classdef Buffer < handle
     end
     methods (Access=public)
         function obj = Buffer(filename)
-            if isfile(filename)
+            if ischar(filename)
                 fprintf('Reading file %s.\n', filename);
                 obj.filename =filename;
                 obj.buffer = fileread(filename);
@@ -92,6 +92,9 @@ classdef Buffer < handle
         end
 
         function error(obj, position, msg, filename)
+            if nargin <4
+                filename='';
+            end
             %line = obj.get_current_line();
             %obj.linenumber
             %errorpos = obj.ptr-obj.linestart;

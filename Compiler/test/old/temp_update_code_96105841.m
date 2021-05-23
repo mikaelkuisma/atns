@@ -1,0 +1,115 @@
+function results = temp_update_code(parameterset, results)
+minor_epoch_length = parameterset.minor_epoch_length;
+steps_per_minor_epoch = parameterset.steps_per_minor_epoch;
+minor_epochs_per_major_epoch = parameterset.minor_epochs_per_major_epoch;
+major_epochs = parameterset.major_epochs;
+dt = minor_epoch_length / steps_per_minor_epoch;
+Guild_C = 1.1000000000000001;
+Guild_s = 0.0010000000000000;
+Alg1_B_i = 1.0000000000000000;
+Alg2_B_i = 3.0000000000000000;
+Alg1_igr_i = 2.0000000000000000;
+Alg2_igr_i = 1.0000000000000000;
+for major=1:major_epochs
+      fprintf('year %d\n', major);
+   for minor=1:minor_epochs_per_major_epoch
+      for iter=1:steps_per_minor_epoch
+       if iter==1
+Bflat = [ Alg1_B_i Alg2_B_i ];
+            results.add_minor_epoch(Bflat);
+            if minor == 1
+                results.add_major_epoch(Bflat);
+            end
+        end
+Bflat = [ Alg1_B_i Alg2_B_i ];
+dAlg1_B_idt = 0;
+dAlg2_B_idt = 0;
+temp0 = Guild_C;
+temp1 = Guild_s;
+temp0 = temp0 * temp1;
+temp1 = Alg1_igr_i;
+temp0 = temp0 * temp1;
+temp1 = Alg1_B_i;
+temp0 = temp0 * temp1;
+dAlg1_B_idt = dAlg1_B_idt + temp0;
+temp0 = Guild_C;
+temp1 = Guild_s;
+temp0 = temp0 * temp1;
+temp1 = Alg2_igr_i;
+temp0 = temp0 * temp1;
+temp1 = Alg2_B_i;
+temp0 = temp0 * temp1;
+dAlg2_B_idt = dAlg2_B_idt + temp0;
+dBflatdt = [ dAlg1_B_idt dAlg2_B_idt ];
+Bflat2 = Bflat;
+Bflat = Bflat + dBflatdt*dt;
+Alg1_B_i = Bflat(1);
+Alg2_B_i = Bflat(2);
+dAlg1_B_idt = 0;
+dAlg2_B_idt = 0;
+temp0 = Guild_C;
+temp1 = Guild_s;
+temp0 = temp0 * temp1;
+temp1 = Alg1_igr_i;
+temp0 = temp0 * temp1;
+temp1 = Alg1_B_i;
+temp0 = temp0 * temp1;
+dAlg1_B_idt = dAlg1_B_idt + temp0;
+temp0 = Guild_C;
+temp1 = Guild_s;
+temp0 = temp0 * temp1;
+temp1 = Alg2_igr_i;
+temp0 = temp0 * temp1;
+temp1 = Alg2_B_i;
+temp0 = temp0 * temp1;
+dAlg2_B_idt = dAlg2_B_idt + temp0;
+dBflat2dt = [ dAlg1_B_idt dAlg2_B_idt ];
+Bflat = Bflat2 + (dBflatdt+dBflat2dt)*dt/2;
+Alg1_B_i = Bflat(1);
+Alg2_B_i = Bflat(2);
+      end
+   end
+Bflat = [ Alg1_B_i Alg2_B_i ];
+dAlg1_B_idt = 0;
+dAlg2_B_idt = 0;
+temp0 = Guild_C;
+temp1 = Guild_s;
+temp0 = temp0 * temp1;
+temp1 = Alg1_igr_i;
+temp0 = temp0 * temp1;
+temp1 = Alg1_B_i;
+temp0 = temp0 * temp1;
+dAlg1_B_idt = dAlg1_B_idt + temp0;
+temp0 = Guild_C;
+temp1 = Guild_s;
+temp0 = temp0 * temp1;
+temp1 = Alg2_igr_i;
+temp0 = temp0 * temp1;
+temp1 = Alg2_B_i;
+temp0 = temp0 * temp1;
+dAlg2_B_idt = dAlg2_B_idt + temp0;
+dAlg1_B_idt = 0;
+dAlg2_B_idt = 0;
+dBflatdt = [ dAlg1_B_idt dAlg2_B_idt ];
+Bflat = Bflat + dBflatdt;
+Alg1_B_i = Bflat(1);
+Alg2_B_i = Bflat(2);
+dAlg1_B_idt = 0;
+dAlg2_B_idt = 0;
+temp0 = Guild_C;
+temp1 = Guild_s;
+temp0 = temp0 * temp1;
+temp1 = Alg1_igr_i;
+temp0 = temp0 * temp1;
+temp1 = Alg1_B_i;
+temp0 = temp0 * temp1;
+dAlg1_B_idt = dAlg1_B_idt + temp0;
+temp0 = Guild_C;
+temp1 = Guild_s;
+temp0 = temp0 * temp1;
+temp1 = Alg2_igr_i;
+temp0 = temp0 * temp1;
+temp1 = Alg2_B_i;
+temp0 = temp0 * temp1;
+dAlg2_B_idt = dAlg2_B_idt + temp0;
+end
